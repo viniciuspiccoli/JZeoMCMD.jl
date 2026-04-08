@@ -1,0 +1,13 @@
+name = "JZeoMCMD"
+uuid = "dda498f4-63a1-4c73-8712-d21d6703256b"
+authors = ["viniciuspiccoli <viniciuspiccoli2008@hotmail.com> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.10.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
