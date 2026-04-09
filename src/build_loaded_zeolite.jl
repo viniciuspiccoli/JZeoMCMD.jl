@@ -92,7 +92,7 @@ end
 
 function read_and_remap_framework(cfg::ZeoliteConfig)
     println("═══ Step 1: Reading Ovito framework ═══")
-    data = LammpsDataReader.read_lammps_data(cfg.ovito_data; verbose=false)
+    data = read_lammps_data(cfg.ovito_data; verbose=false)
     natoms = size(data.coords, 1)
 
     # Remap types
@@ -181,7 +181,7 @@ function read_raspa3_ethanol(cfg::ZeoliteConfig, box_dims)
     println("\n═══ Step 3: Reading RASPA3 restart ═══")
     isempty(cfg.raspa_restart) && (println("  No restart file — skipping."); return [])
 
-    restart = _JSON.parsefile(cfg.raspa_restart)
+    restart = JSON.parsefile(cfg.raspa_restart)
 
     # Find adsorbate key
     component_key = ""
@@ -596,21 +596,21 @@ velocity adsorbate create 10.0 12345 dist gaussian mom yes rot yes
 timestep 0.25
 
 fix eq1 adsorbate nvt temp 10.0 50.0 100.0
-run 40000
+run 400
 unfix eq1
 
 fix eq2 adsorbate nvt temp 50.0 150.0 100.0
-run 80000
+run 800
 unfix eq2
 
 fix eq3 adsorbate nvt temp 150.0 300.0 100.0
-run 120000
+run 1200
 unfix eq3
 unfix freeze
 
 fix hold framework spring/self 10.0
 fix eq4 all nvt temp \${T} \${T} 100.0
-run 200000
+run 2000
 unfix eq4
 unfix hold
 
@@ -621,10 +621,11 @@ reset_timestep 0
 
 change_box all triclinic
 fix prod all npt temp \${T} \${T} 100.0 tri 1.0 1.0 5000.0
+fix mom all momentum 1000 linear 1 1 1 angular
 
 dump d1 all custom 1000 traj_loaded.lammpstrj id type x y z
 dump_modify d1 sort id
-run 1000000
+run 10000
 
 write_data loaded_npt_final.lmp
 print "=== Complete ==="
@@ -633,6 +634,9 @@ print "=== Complete ==="
     println("  Done: $fname")
 end
 
+
+#=
+#
 # ═══════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════
@@ -662,3 +666,4 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
+=#

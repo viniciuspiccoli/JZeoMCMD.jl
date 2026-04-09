@@ -441,6 +441,8 @@ end
 # Standalone CLI
 # ============================================================================
 
+#=
+
 function main(args=ARGS)
     if length(args) < 2
         println("""
@@ -515,3 +517,5 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
+
+=#

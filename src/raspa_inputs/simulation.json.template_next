@@ -9,8 +9,7 @@
     {
       "Type" : "Framework",
       "Name" : "__FRAMEWORK__",
-      "HeliumVoidFraction"  : 0.29, 
-      "NumberOfUnitCells" : [2, 2, 2],
+      "NumberOfUnitCells" : [1, 1, 1],
       "ExternalTemperature" : __TEMPERATURE__,
       "ExternalPressure" : __PRESSURE__,
       "ChargeMethod" : "Ewald",

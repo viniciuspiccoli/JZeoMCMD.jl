@@ -144,7 +144,7 @@ end
 # ═══════════════════════════════════════════════════════════════════
 
 function read_raspa3_molecules(json_path::String, box_dims, cfg::ReloadConfig)
-    restart = _JSON.parsefile(json_path)
+    restart = JSON.parsefile(json_path)
 
     component_key = ""
     for k in keys(restart)
@@ -291,7 +291,7 @@ function reload_adsorbate(prev_data::String, json_restart::String,
     println("╚═══════════════════════════════════════════════╝\n")
 
     println("═══ Reading $prev_data ═══")
-    data = LammpsDataReader.read_lammps_data(prev_data; verbose=false)
+    data = read_lammps_data(prev_data; verbose=false)
     println("  Atoms: $(size(data.coords,1))")
 
     println("\n═══ Stripping old adsorbate ═══")

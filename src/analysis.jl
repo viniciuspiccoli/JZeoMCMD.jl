@@ -223,7 +223,7 @@ function write_cycle_summary(filename::String, d::Dict; append::Bool=true)
     mode = append && isfile(filename) ? "a" : "w"
     open(filename, mode) do io
         mode == "w" && println(io, header)
-        @printf(io, "%d,%.1f,%.2f,%d,%d,%d,%.6f,%.6f,%.6f,%.4f,%.4f,%.4f,%.2f,%.6e,%.6e,%.6e,%.6e,%s\n",
+        @printf(io, "%d,%.1f,%.2f,%d,%d,%d,%.6f,%.6f,%.6f,%.4f,%.4f,%.4f,%.2f,%.6e,%.6e,%.6e,%.6e\n",
                 get(d, "iteration", 0),
                 get(d, "pressure", 0.0),
                 get(d, "n_ads", NaN),
@@ -234,7 +234,7 @@ function write_cycle_summary(filename::String, d::Dict; append::Bool=true)
                 get(d, "alpha", NaN), get(d, "beta", NaN), get(d, "gamma", NaN),
                 get(d, "volume", NaN),
                 get(d, "strain_a", NaN), get(d, "strain_b", NaN),
-                get(d, "strain_c", NaN), get(d, "strain_V", NaN),
-                Dates.format(now(), "yyyy-mm-dd_HH:MM:SS"))
+                get(d, "strain_c", NaN), get(d, "strain_V", NaN)
+                )
     end
 end

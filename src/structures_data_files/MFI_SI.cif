@@ -1,131 +1,89 @@
+data_MFI
 
-#======================================================================
-# CRYSTAL DATA
-#----------------------------------------------------------------------
-data_VESTA_phase_1
+_audit_creation_method RASPA-1.0
+_audit_creation_date 2011-2-17
+_audit_author_name 'David Dubbeldam'
 
-_chemical_name_common                  'MFI'
-_cell_length_a                         40.043999
-_cell_length_b                         39.798000
-_cell_length_c                         26.766001
-_cell_angle_alpha                      90.000000
-_cell_angle_beta                       90.000000
-_cell_angle_gamma                      90.000000
-_cell_volume                           42656.201170
-_space_group_name_H-M_alt              'P n m a'
-_space_group_IT_number                 62
+_citation_author_name        'H. van Koningsveld, H. van Bekkum, and J. C. Jansen'
+_citation_title              'On the location and disorder of the tetrapropylammonium (TPA) ion in zeolite ZSM-5 with improved framework accuracy'
+_citation_journal_abbrev     'Acta Cryst.'
+_citation_journal_volume     B43
+_citation_page_first         127
+_citation_page_last          132
+_citation_year               1987
 
-loop_
-_space_group_symop_operation_xyz
-   'x, y, z'
-   '-x, -y, -z'
-   '-x+1/4t, -y, z+1/4t'
-   'x+1/4t, y, -z+1/4t'
-   '-x, y+1/4t, -z'
-   'x, -y+1/4t, z'
-   'x+1/4t, -y+1/4t, -z+1/4t'
-   '-x+1/4t, y+1/4t, z+1/4t'
-   'x, y, z+1/2t'
-   '-x, -y, -z+1/2t'
-   '-x+1/4t, -y, z+3/4t'
-   'x+1/4t, y, -z+3/4t'
-   '-x, y+1/4t, -z+1/2t'
-   'x, -y+1/4t, z+1/2t'
-   'x+1/4t, -y+1/4t, -z+3/4t'
-   '-x+1/4t, y+1/4t, z+3/4t'
-   'x, y+1/2t, z'
-   '-x, -y+1/2t, -z'
-   '-x+1/4t, -y+1/2t, z+1/4t'
-   'x+1/4t, y+1/2t, -z+1/4t'
-   '-x, y+3/4t, -z'
-   'x, -y+3/4t, z'
-   'x+1/4t, -y+3/4t, -z+1/4t'
-   '-x+1/4t, y+3/4t, z+1/4t'
-   'x, y+1/2t, z+1/2t'
-   '-x, -y+1/2t, -z+1/2t'
-   '-x+1/4t, -y+1/2t, z+3/4t'
-   'x+1/4t, y+1/2t, -z+3/4t'
-   '-x, y+3/4t, -z+1/2t'
-   'x, -y+3/4t, z+1/2t'
-   'x+1/4t, -y+3/4t, -z+3/4t'
-   '-x+1/4t, y+3/4t, z+3/4t'
-   'x+1/2t, y, z'
-   '-x+1/2t, -y, -z'
-   '-x+3/4t, -y, z+1/4t'
-   'x+3/4t, y, -z+1/4t'
-   '-x+1/2t, y+1/4t, -z'
-   'x+1/2t, -y+1/4t, z'
-   'x+3/4t, -y+1/4t, -z+1/4t'
-   '-x+3/4t, y+1/4t, z+1/4t'
-   'x+1/2t, y, z+1/2t'
-   '-x+1/2t, -y, -z+1/2t'
-   '-x+3/4t, -y, z+3/4t'
-   'x+3/4t, y, -z+3/4t'
-   '-x+1/2t, y+1/4t, -z+1/2t'
-   'x+1/2t, -y+1/4t, z+1/2t'
-   'x+3/4t, -y+1/4t, -z+3/4t'
-   '-x+3/4t, y+1/4t, z+3/4t'
-   'x+1/2t, y+1/2t, z'
-   '-x+1/2t, -y+1/2t, -z'
-   '-x+3/4t, -y+1/2t, z+1/4t'
-   'x+3/4t, y+1/2t, -z+1/4t'
-   '-x+1/2t, y+3/4t, -z'
-   'x+1/2t, -y+3/4t, z'
-   'x+3/4t, -y+3/4t, -z+1/4t'
-   '-x+3/4t, y+3/4t, z+1/4t'
-   'x+1/2t, y+1/2t, z+1/2t'
-   '-x+1/2t, -y+1/2t, -z+1/2t'
-   '-x+3/4t, -y+1/2t, z+3/4t'
-   'x+3/4t, y+1/2t, -z+3/4t'
-   '-x+1/2t, y+3/4t, -z+1/2t'
-   'x+1/2t, -y+3/4t, z+1/2t'
-   'x+3/4t, -y+3/4t, -z+3/4t'
-   '-x+3/4t, y+3/4t, z+3/4t'
+_cell_length_a    20.022
+_cell_length_b    19.899
+_cell_length_c    13.383
+_cell_angle_alpha 90
+_cell_angle_beta  90
+_cell_angle_gamma 90
+_cell_volume      5332.03
+
+_symmetry_cell_setting          orthorhombic
+_symmetry_space_group_name_Hall '-P 2ac 2n'
+_symmetry_space_group_name_H-M  'P n m a'
+_symmetry_Int_Tables_number     62
 
 loop_
-   _atom_site_label
-   _atom_site_occupancy
-   _atom_site_fract_x
-   _atom_site_fract_y
-   _atom_site_fract_z
-   _atom_site_adp_type
-   _atom_site_U_iso_or_equiv
-   _atom_site_type_symbol
-   Si1        1.0     0.211190     0.028250     0.832010    Uiso  ? Si
-   Si2        1.0     0.153580     0.013860     0.905350    Uiso  ? Si
-   Si3        1.0     0.139555     0.030635     0.015600    Uiso  ? Si
-   Si4        1.0     0.061075     0.031490     0.013350    Uiso  ? Si
-   Si5        1.0     0.035640     0.013610     0.907245    Uiso  ? Si
-   Si6        1.0     0.093205     0.029480     0.835910    Uiso  ? Si
-   Si7        1.0     0.211325     0.913750     0.836410    Uiso  ? Si
-   Si8        1.0     0.153890     0.934920     0.907260    Uiso  ? Si
-   Si9        1.0     0.137770     0.913605     0.015545    Uiso  ? Si
-   Si10       1.0     0.060290     0.913450     0.014895    Uiso  ? Si
-   Si11       1.0     0.035220     0.934815     0.909000    Uiso  ? Si
-   Si12       1.0     0.093530     0.913365     0.840335    Uiso  ? Si
-   O1         1.0     0.186300     0.026700     0.877900    Uiso  ? O
-   O2         1.0     0.154200     0.029350     0.960550    Uiso  ? O
-   O3         1.0     0.100350     0.029600     0.014450    Uiso  ? O
-   O4         1.0     0.048450     0.030550     0.957200    Uiso  ? O
-   O5         1.0     0.057450     0.027050     0.861850    Uiso  ? O
-   O6         1.0     0.121750     0.027650     0.877000    Uiso  ? O
-   O7         1.0     0.187100     0.921950     0.881400    Uiso  ? O
-   O8         1.0     0.154250     0.922400     0.963600    Uiso  ? O
-   O9         1.0     0.099000     0.922300     0.014400    Uiso  ? O
-   O10        1.0     0.045500     0.919300     0.961150    Uiso  ? O
-   O11        1.0     0.058450     0.921100     0.865300    Uiso  ? O
-   O12        1.0     0.122400     0.920300     0.878900    Uiso  ? O
-   O13        1.0     0.152350     0.974500     0.906700    Uiso  ? O
-   O14        1.0     0.038400     0.974050     0.911550    Uiso  ? O
-   O15        1.0     0.208050     0.063800     0.805200    Uiso  ? O
-   O16        1.0     0.204300     0.999150     0.793200    Uiso  ? O
-   O17        1.0     0.201000     0.934300     0.788050    Uiso  ? O
-   O18        1.0     0.094300     0.064900     0.808200    Uiso  ? O
-   O19        1.0     0.097000     0.000350     0.795900    Uiso  ? O
-   O20        1.0     0.097550     0.935450     0.790500    Uiso  ? O
-   O21        1.0     0.998150     0.025100     0.896000    Uiso  ? O
-   O22        1.0     0.998000     0.923600     0.896100    Uiso  ? O
-   O23        1.0     0.209600     0.875000     0.823000    Uiso  ? O
-   O24        1.0     0.094200     0.875000     0.823100    Uiso  ? O
-   O25        1.0     0.144150     0.875000     0.028950    Uiso  ? O
-   O26        1.0     0.054250     0.875000     0.030550    Uiso  ? O
+_symmetry_equiv_pos_as_xyz
+ 'x,y,z'
+ '-x+1/2,-y,z+1/2'
+ '-x,y+1/2,-z'
+ 'x+1/2,-y+1/2,-z+1/2'
+ '-x,-y,-z'
+ 'x+1/2,y,-z+1/2'
+ 'x,-y+1/2,z'
+ '-x+1/2,y+1/2,z+1/2'
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_charge
+_atom_site_polarization
+_atom_site_anisotropic_displacement
+_atom_site_anisotropic_type
+_atom_site_print_to_pdb
+Si       Si     0.42238   0.0565   -0.33598   2.05    0       0    absolute yes
+Si       Si     0.30716   0.02772  -0.1893    2.05    0       0    absolute yes
+Si       Si     0.27911   0.06127   0.0312    2.05    0       0    absolute yes
+Si       Si     0.12215   0.06298   0.0267    2.05    0       0    absolute yes
+Si       Si     0.07128   0.02722  -0.18551   2.05    0       0    absolute yes
+Si       Si     0.18641   0.05896  -0.32818   2.05    0       0    absolute yes
+Si       Si     0.42265  -0.1725   -0.32718   2.05    0       0    absolute yes
+Si       Si     0.30778  -0.13016  -0.18548   2.05    0       0    absolute yes
+Si       Si     0.27554  -0.17279   0.03109   2.05    0       0    absolute yes
+Si       Si     0.12058  -0.1731    0.02979   2.05    0       0    absolute yes
+Si       Si     0.07044  -0.13037  -0.182     2.05    0       0    absolute yes
+Si       Si     0.18706  -0.17327  -0.31933   2.05    0       0    absolute yes
+O        O      0.3726    0.0534   -0.2442   -1.025   0       0    absolute yes
+O        O      0.3084    0.0587   -0.0789   -1.025   0       0    absolute yes
+O        O      0.2007    0.0592    0.0289   -1.025   0       0    absolute yes
+O        O      0.0969    0.0611   -0.0856   -1.025   0       0    absolute yes
+O        O      0.1149    0.0541   -0.2763   -1.025   0       0    absolute yes
+O        O      0.2435    0.0553   -0.246    -1.025   0       0    absolute yes
+O        O      0.3742   -0.1561   -0.2372   -1.025   0       0    absolute yes
+O        O      0.3085   -0.1552   -0.0728   -1.025   0       0    absolute yes
+O        O      0.198    -0.1554    0.0288   -1.025   0       0    absolute yes
+O        O      0.091    -0.1614   -0.0777   -1.025   0       0    absolute yes
+O        O      0.1169   -0.1578   -0.2694   -1.025   0       0    absolute yes
+O        O      0.2448   -0.1594   -0.2422   -1.025   0       0    absolute yes
+O        O      0.3047   -0.051    -0.1866   -1.025   0       0    absolute yes
+O        O      0.0768   -0.0519   -0.1769   -1.025   0       0    absolute yes
+O        O      0.4161    0.1276   -0.3896   -1.025   0       0    absolute yes
+O        O      0.4086   -0.0017   -0.4136   -1.025   0       0    absolute yes
+O        O      0.402    -0.1314   -0.4239   -1.025   0       0    absolute yes
+O        O      0.1886    0.1298   -0.3836   -1.025   0       0    absolute yes
+O        O      0.194     0.0007   -0.4082   -1.025   0       0    absolute yes
+O        O      0.1951   -0.1291   -0.419    -1.025   0       0    absolute yes
+O        O     -0.0037    0.0502   -0.208    -1.025   0       0    absolute yes
+O        O     -0.004    -0.1528   -0.2078   -1.025   0       0    absolute yes
+O        O      0.4192   -0.25     -0.354    -1.025   0       0    absolute yes
+O        O      0.1884   -0.25     -0.3538   -1.025   0       0    absolute yes
+O        O      0.2883   -0.25      0.0579   -1.025   0       0    absolute yes
+O        O      0.1085   -0.25      0.0611   -1.025   0       0    absolute yes
+
+
