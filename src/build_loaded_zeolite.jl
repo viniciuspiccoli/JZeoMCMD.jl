@@ -13,11 +13,6 @@ Supports: all-silica and aluminosilicate frameworks.
 Usage:
   julia build_loaded_zeolite.jl <ovito.data> [raspa_restart.json] [output.lmp]
 
-Dependencies (must be in same directory):
-  read_lammps_data.jl    — LammpsDataReader module
-  add_zeolite_topology.jl — topology builder (v3, Si/Al-aware)
-  hillsauer_nb.table      — non-bonded table (for input script)
-  JSON.jl package         — Pkg.add("JSON")
 """
 
 #using Printf
@@ -386,7 +381,75 @@ end
 
 # ═══════════════════════════════════════════════════════════════════
 # Step 5: Write LAMMPS data file with embedded class2 coefficients
+# adding impropers
 # ═══════════════════════════════════════════════════════════════════
+
+
+# function that will generate the impropers
+
+"""
+    generate_impropers!(data; si_type=1, o_type=2)
+
+Generate class2 improper terms for each Si atom.
+For Si with 4 O neighbors (O1,O2,O3,O4), generates 4 impropers:
+  O1-Si-O2-O3, O1-Si-O2-O4, O1-Si-O3-O4, O2-Si-O3-O4
+All are improper type 1.
+
+Must be called AFTER add_zeolite_topology! (needs bond list).
+"""
+function generate_impropers!(data; si_type::Int=1, o_type::Int=2)
+    natoms = size(data.coords, 1)
+
+    # Build neighbor list
+    neighbors = Dict{Int, Vector{Int}}()
+    for j in 1:natoms
+        neighbors[data.atom_ids[j]] = Int[]
+    end
+    for k in 1:size(data.bonds, 1)
+        a1, a2 = data.bonds[k, 1], data.bonds[k, 2]
+        push!(neighbors[a1], a2)
+        push!(neighbors[a2], a1)
+    end
+
+    id_to_idx = Dict(data.atom_ids[j] => j for j in 1:natoms)
+
+    impropers = Vector{NTuple{4,Int}}()
+
+    for j in 1:natoms
+        data.atom_labels[j] == si_type || continue
+        si_id = data.atom_ids[j]
+        o_nbrs = filter(n -> data.atom_labels[id_to_idx[n]] == o_type, neighbors[si_id])
+        length(o_nbrs) == 4 || continue
+
+        # Generate C(4,3) = 4 impropers: Oa-Si-Ob-Oc
+        for a in 1:4, b in (a+1):4, c in (b+1):4
+            # LAMMPS class2 improper: i-j-k-l where j=center
+            # Pick the remaining O as i, center=Si, k and l from the triple
+            others = [o_nbrs[a], o_nbrs[b], o_nbrs[c]]
+            push!(impropers, (others[1], si_id, others[2], others[3]))
+        end
+    end
+
+    n_imp = length(impropers)
+    if n_imp > 0
+        data.nimproper_types = 1
+        # Store as matrix + labels (matching bonds/angles/dihedrals convention)
+        imp_mat = zeros(Int, n_imp, 4)
+        imp_labels = ones(Int, n_imp)
+        for k in 1:n_imp
+            imp_mat[k, 1] = impropers[k][1]
+            imp_mat[k, 2] = impropers[k][2]
+            imp_mat[k, 3] = impropers[k][3]
+            imp_mat[k, 4] = impropers[k][4]
+        end
+        data.impropers = imp_mat
+        data.improper_labels = imp_labels
+    end
+
+    println("  Impropers: $n_imp ($(n_imp÷4) Si atoms × 4 each)")
+    return data
+end
+
 
 function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
     println("\n═══ Step 5: Writing $fname ═══")
@@ -395,7 +458,11 @@ function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
     nbt = d.nbond_types; nat = d.nangle_types; ndt = d.ndihedral_types
     natypes = maximum(keys(d.masses))
     is_tri = any(d.tilt_factors .!= 0.0)
+
     has_eth = natypes > 2
+    has_imp = hasproperty(d, :impropers) && size(d.impropers, 1) > 0
+    n_imp = has_imp ? size(d.impropers, 1) : 0
+    n_imp_types = has_imp ? d.nimproper_types : 0
 
     open(fname, "w") do io
         println(io, "LAMMPS data — loaded zeolite (build_loaded_zeolite.jl v1.1)\n")
@@ -403,12 +470,12 @@ function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
         println(io, "$(size(d.bonds,1)) bonds")
         println(io, "$(size(d.angles,1)) angles")
         println(io, "$(size(d.dihedrals,1)) dihedrals")
-        println(io, "0 impropers\n")
+        println(io, "$(n_imp) impropers\n")
         println(io, "$natypes atom types")
         println(io, "$nbt bond types")
         println(io, "$nat angle types")
         println(io, "$ndt dihedral types")
-        println(io, "0 improper types\n")
+        println(io, "$(n_imp_types) improper types\n")
         @printf(io, "%.10f %.10f xlo xhi\n", d.box_dimensions[1,1], d.box_dimensions[1,2])
         @printf(io, "%.10f %.10f ylo yhi\n", d.box_dimensions[2,1], d.box_dimensions[2,2])
         @printf(io, "%.10f %.10f zlo zhi\n", d.box_dimensions[3,1], d.box_dimensions[3,2])
@@ -473,6 +540,19 @@ function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
         println(io, "  1  0.0  1.6104  1.6104")
         has_eth && println(io, "  2  0.0  1.540  0.945")
 
+        # ── Improper Coeffs (if impropers exist) ──
+        if has_imp
+            println(io, "\nImproper Coeffs # class2\n")
+            println(io, "  1  0.0  0.0  # chi0=0, K0=0")
+
+            println(io, "\nAngleAngle Coeffs\n")
+            # M1, M2, M3, θ1, θ2, θ3
+            # From Sholl: M1=-6.303, M2=0, M3=0, θ1=θ3=θ₀(O-Si-O)
+            # Using original HSFF θ₀ = 112.02 (same convention as aat)
+            println(io, "  1  -6.3030  0.0  0.0  112.0200  0.0  112.0200")
+        end
+
+
         # ── Atoms ──
         println(io, "\nAtoms # full\n")
         for j in 1:natoms
@@ -481,6 +561,8 @@ function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
                     d.atom_charges[j], d.coords[j,1], d.coords[j,2], d.coords[j,3],
                     d.image_flags[j,1], d.image_flags[j,2], d.image_flags[j,3])
         end
+### adcionar aqui <-
+
 
         # ── Topology sections ──
         for (secname, labels, atoms) in [
@@ -495,6 +577,17 @@ function write_complete_data(fname::String, d, cfg::ZeoliteConfig)
                 println(io)
             end
         end
+        
+        # ── Impropers ──
+        if has_imp
+            println(io, "\nImpropers\n")
+            for k in 1:n_imp
+                print(io, "  $k $(d.improper_labels[k])")
+                for c in 1:4; print(io, " $(d.impropers[k,c])"); end
+                println(io)
+            end
+        end
+
     end
     println("  Done: $fname")
 end
@@ -521,6 +614,7 @@ atom_style      full
 bond_style      class2
 angle_style     class2
 dihedral_style  class2
+improper_style  class2
 
 read_data       $data_file
 

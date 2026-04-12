@@ -1,11 +1,28 @@
 # ════════════════════════════════════════════════════════════════
 # workflow.jl — Master GCMC/MD loop (included by JZeoMCMD.jl)
 #
-# All simulation files go to wp.base_dir (user's project folder).
-# Package resources (params.toml, raspa_inputs/) are found via
-# JZeoMCMD.resource_dir().
+# Directory structure (matches run_test.jl):
+#   base_dir/
+#   ├── hillsauer_nb.table
+#   ├── run_npt.in
+#   ├── MFI_SI.cif
+#   ├── convergence.csv
+#   ├── cycle_01/
+#   │   ├── raspa/
+#   │   │   ├── simulation.json
+#   │   │   └── output/           ← RASPA3 creates this
+#   │   │       └── restart_*.json
+#   │   ├── lammps/
+#   │   │   ├── loaded.lmp
+#   │   │   ├── run_npt.in
+#   │   │   └── npt_final.data
+#   │   ├── loaded.lmp
+#   │   └── distorted.cif
+#   └── cycle_02/
+#       └── ...
 # ════════════════════════════════════════════════════════════════
 
+import TOML, Dates
 
 """
     WorkflowParams
@@ -22,47 +39,62 @@ Base.@kwdef mutable struct WorkflowParams
     initial_cif::String  = ""
     initial_data::String = ""
 
-    # ── Package resources (defaults to package paths) ──
-    params_toml::String     = params_path()         # from JZeoMCMD
-    raspa_input_dir::String = raspa_inputs_path()    # from JZeoMCMD
-    lammps_input::String    = ""                     # user must provide
+    # ── Package resources ──
+    params_toml::String     = params_path()
+    raspa_input_dir::String = raspa_inputs_path()
+    lammps_input::String    = ""    # path to run_npt.in in base_dir
 
     # ── Executables ──
     raspa_exe::String  = "raspa3"
-    lammps_exe::String = "lmp"
+    lammps_exe::String = "lmp_mpi"
 
     # ── Physics ──
     temperature::Float64 = 300.0
     pressure::Float64    = 1e5
 
+    # ── RASPA3 GCMC settings ──
+    raspa_n_init::Int    = 10000    # NumberOfInitializationCycles
+    raspa_n_equil::Int   = 10000   # NumberOfEquilibrationCycles
+    raspa_n_prod::Int    = 50000   # NumberOfCycles (production)
+    raspa_print_every::Int = 1000
+
+    # ── LAMMPS NPT settings ──
+    lammps_minimize_steps::Int  = 5000    # minimize iterations
+    lammps_nvt_ramp_steps::Int  = 240000  # total NVT ramp (40k+80k+120k)
+    lammps_nvt_hold_steps::Int  = 200000  # NVT hold at T
+    lammps_npt_steps::Int       = 500000  # NPT production
+    lammps_timestep::Float64    = 0.25    # fs
+
     # ── Iteration control ──
-    max_iterations::Int     = 50
+    max_iterations::Int     = 10
     convergence_tol::Float64 = 0.005
     convergence_window::Int  = 5
 
-    # ── Derived (set automatically) ──
-    table_file::String = ""   # auto-generated if empty
+    # ── Derived ──
+    table_file::String = "hillsauer_nb.table"
     adsorbate_component::String = "ethanol"
+    atoms_per_mol::Int = 4         # ethanol = CH3 + CH2 + O + H
+    n_unit_cells::Int = 8          # 2×2×2
+    nfw_atoms::Int = 2304          # MFI 2×2×2
 end
 
 """
     load_workflow_params(toml_path; base_dir=pwd(), kwargs...)
 
-Load workflow settings from params.toml. The `base_dir` is where
-simulations will run (NOT the package directory).
+Load workflow settings from params.toml.
 """
 function load_workflow_params(toml_path::String; base_dir::String=pwd(), kwargs...)
     p = TOML.parsefile(toml_path)
     wf = get(p, "workflow", Dict())
 
     wp = WorkflowParams(
-        base_dir        = base_dir,
-        params_toml     = toml_path,
-        raspa_input_dir = get(wf, "raspa_input_dir", raspa_inputs_path()),
-        lammps_input    = get(wf, "lammps_input", ""),
-        raspa_exe       = get(wf, "raspa_exe", "raspa3"),
-        lammps_exe      = get(wf, "lammps_exe", "lmp"),
-        table_file      = get(wf, "table_file", ""),
+        base_dir            = base_dir,
+        params_toml         = toml_path,
+        raspa_input_dir     = get(wf, "raspa_input_dir", raspa_inputs_path()),
+        lammps_input        = get(wf, "lammps_input", ""),
+        raspa_exe           = get(wf, "raspa_exe", "raspa3"),
+        lammps_exe          = get(wf, "lammps_exe", "lmp_mpi"),
+        table_file          = get(wf, "table_file", "hillsauer_nb.table"),
         adsorbate_component = get(wf, "adsorbate_component", "ethanol"),
     )
 
@@ -73,234 +105,368 @@ function load_workflow_params(toml_path::String; base_dir::String=pwd(), kwargs.
 end
 
 # ════════════════════════════════════════════════════════════════
-# Auto-generate table in the user's base_dir
+# Auto-generate table in base_dir if missing
 # ════════════════════════════════════════════════════════════════
 
 function ensure_tables!(wp::WorkflowParams)
-    # Check if table already exists in base_dir
-    if !isempty(wp.table_file)
-        full = joinpath(wp.base_dir, wp.table_file)
-        isfile(full) && return full
+    full = joinpath(wp.base_dir, wp.table_file)
+    isfile(full) && return full
+
+    # Try copying from package
+    pkg_table = joinpath(resource_dir(), "ff", "hillsauer_silica.table")
+    if isfile(pkg_table)
+        cp(pkg_table, full; force=true)
+        println("  Copied table from package: $full")
+        return full
     end
 
-    # Auto-generate
+    # Auto-generate from params.toml
     p = TOML.parsefile(wp.params_toml)
     nb = p["framework"]["nonbonded"]
     ps = p["pair_style"]
-
     A_Si = nb["A_Si"]; A_O = nb["A_O"]
     A_Al = get(nb, "A_Al", A_Si)
     rmin = ps["table_rmin"]; rmax = ps["table_rmax"]; N = ps["table_npoints"]
     al_type = get(p["framework"], "Al_type", 0)
 
     pairs = [("Si_Si",A_Si,A_Si), ("Si_O",A_Si,A_O), ("O_O",A_O,A_O)]
-    if al_type > 0
-        append!(pairs, [("Si_Al",A_Si,A_Al), ("O_Al",A_O,A_Al), ("Al_Al",A_Al,A_Al)])
-    end
+    al_type > 0 && append!(pairs, [("Si_Al",A_Si,A_Al), ("O_Al",A_O,A_Al), ("Al_Al",A_Al,A_Al)])
 
-    fname = isempty(wp.table_file) ? "hillsauer_nb.table" : wp.table_file
-    out = joinpath(wp.base_dir, fname)
-
-    open(out, "w") do io
-        println(io, "# Auto-generated Hill-Sauer A/r^9 table\n# E=A/r^9  F=9A/r^10\n# real units\n")
+    open(full, "w") do io
+        println(io, "# Hill-Sauer A/r^9 table (auto-generated)\n")
         for (label, Ai, Aj) in pairs
-            A = sqrt(Ai * Aj)
+            A = sqrt(Ai*Aj)
             println(io, label); println(io, "N $N R $rmin $rmax\n")
-            dr = (rmax - rmin) / (N - 1)
+            dr = (rmax-rmin)/(N-1)
             for k in 1:N
-                r = rmin + (k-1)*dr
+                r = rmin+(k-1)*dr
                 @printf(io, "%d  %.6f  %.6f  %.6f\n", k, r, A/r^9, 9A/r^10)
             end
             println(io)
         end
     end
-    wp.table_file = fname
-    println("  Auto-generated table: $out")
-    return out
+    println("  Auto-generated table: $full")
+    return full
 end
 
 # ════════════════════════════════════════════════════════════════
-# Folder management — all under base_dir
+# Folder management
 # ════════════════════════════════════════════════════════════════
 
-function iter_dir(wp::WorkflowParams, n::Int)
-    d = joinpath(wp.base_dir, @sprintf("iter_%03d", n))
+function cycle_dir(wp::WorkflowParams, n::Int)
+    d = joinpath(wp.base_dir, @sprintf("cycle_%02d", n))
     mkpath(d)
     return d
 end
 
 # ════════════════════════════════════════════════════════════════
-# Step 1: GCMC — copy raspa_input_dir, patch pressure + CIF
+# Step 1: RASPA3 GCMC
+#   - Copy raspa_input_dir → cycle_NN/raspa/
+#   - Cycle 1: uses simulation.json.template (unit cell CIF)
+#   - Cycle 2+: uses simulation.json.template_next (supercell CIF, 1×1×1)
+#   - Patches __FRAMEWORK__, __TEMPERATURE__, __PRESSURE__
+#   - RASPA3 output goes to cycle_NN/raspa/output/
 # ════════════════════════════════════════════════════════════════
 
-function step_gcmc!(wp::WorkflowParams, iteration::Int, cif_path::String)
-    rdir = joinpath(iter_dir(wp, iteration), "raspa")
+function step_gcmc!(wp::WorkflowParams, cycle::Int, cif_path::String)
+    rdir = joinpath(cycle_dir(wp, cycle), "raspa")
     mkpath(rdir)
 
-    # Copy user's (or package's) RASPA input files
-    src_dir = wp.raspa_input_dir
-    if !isdir(src_dir)
-        @warn "RASPA input dir not found: $src_dir"
+    # Copy all RASPA input files from package
+    pkg_raspa = wp.raspa_input_dir
+    if !isdir(pkg_raspa)
+        @warn "RASPA input dir not found: $pkg_raspa"
         return nothing
     end
-    for f in readdir(src_dir; join=true)
+    for f in readdir(pkg_raspa; join=true)
         isfile(f) && cp(f, joinpath(rdir, basename(f)); force=true)
     end
 
     # Copy CIF
-    cp(cif_path, joinpath(rdir, basename(cif_path)); force=true)
+    cif_name = basename(cif_path)
+    cp(cif_path, joinpath(rdir, cif_name); force=true)
+    fw_name = replace(cif_name, ".cif" => "")
 
-    # Patch simulation.json: pressure + framework name
-    local _JSON = Base.require(Base.PkgId(
-        Base.UUID("682c06a0-de6a-54ab-a142-c8b1cf79cde6"), "JSON"))
-
-    sim_json = joinpath(rdir, "simulation.json")
-    if isfile(sim_json)
-        content = _JSON.parsefile(sim_json)
-        if haskey(content, "Systems") && !isempty(content["Systems"])
-            content["Systems"][1]["ExternalPressure"] = wp.pressure
-            content["Systems"][1]["Name"] = replace(basename(cif_path), ".cif"=>"")
-        end
-        open(sim_json, "w") do io; _JSON.print(io, content, 2); end
+    # Select template based on cycle
+    sim_file = joinpath(rdir, "simulation.json")
+    if cycle == 1
+        sim_template = joinpath(rdir, "simulation.json.template")
     else
-        # Maybe it's a template — rename
-        tmpl = joinpath(rdir, "simulation.json.template")
-        if isfile(tmpl)
-            txt = read(tmpl, String)
-            txt = replace(txt,
-                "__PRESSURE__"  => string(wp.pressure),
-                "__FRAMEWORK__" => replace(basename(cif_path), ".cif"=>""),
-                "__TEMPERATURE__" => string(wp.temperature))
-            write(sim_json, txt)
-        end
+        sim_template = joinpath(rdir, "simulation.json.template_next")
     end
 
+    if isfile(sim_template)
+        txt = read(sim_template, String)
+        txt = replace(txt,
+            "__FRAMEWORK__"   => fw_name,
+            "__TEMPERATURE__" => string(wp.temperature),
+            "__PRESSURE__"    => string(wp.pressure),
+            "__N_INIT__"      => string(wp.raspa_n_init),
+            "__N_EQUIL__"     => string(wp.raspa_n_equil),
+            "__N_PROD__"      => string(wp.raspa_n_prod),
+            "__PRINT_EVERY__" => string(wp.raspa_print_every),
+        )
+        write(sim_file, txt)
+        # Clean up unused templates
+        for t in ["simulation.json.template", "simulation.json.template_next"]
+            tf = joinpath(rdir, t)
+            isfile(tf) && rm(tf)
+        end
+    elseif isfile(sim_file)
+        # Patch existing JSON directly
+        content = JSON.parsefile(sim_file)
+        if haskey(content, "Systems") && !isempty(content["Systems"])
+            content["Systems"][1]["ExternalPressure"] = wp.pressure
+            content["Systems"][1]["ExternalTemperature"] = wp.temperature
+            content["Systems"][1]["Name"] = fw_name
+        end
+        haskey(content, "NumberOfCycles") &&
+            (content["NumberOfCycles"] = wp.raspa_n_prod)
+        haskey(content, "NumberOfInitializationCycles") &&
+            (content["NumberOfInitializationCycles"] = wp.raspa_n_init)
+        haskey(content, "NumberOfEquilibrationCycles") &&
+            (content["NumberOfEquilibrationCycles"] = wp.raspa_n_equil)
+        haskey(content, "PrintEvery") &&
+            (content["PrintEvery"] = wp.raspa_print_every)
+        open(sim_file, "w") do io
+            JSON.print(io, content, 2)
+        end
+    else
+        error("No simulation.json or template found in $rdir")
+    end
+
+    # Run RASPA3
     println("  [GCMC] Running RASPA3 (P=$(wp.pressure) Pa)...")
+    t0 = time()
     try
-        run(Cmd(`$(wp.raspa_exe)`, dir=rdir); wait=true)
+        run(Cmd(Cmd(split(wp.raspa_exe)); dir=rdir))
     catch e
         @warn "RASPA3 failed" exception=e
         return nothing
     end
+    @printf("  [GCMC] Done (%.1f s)\n", time()-t0)
 
-    # Find restart JSON
-    restarts = filter(f -> startswith(f,"restart_") && endswith(f,".json"), readdir(rdir))
-    isempty(restarts) && (@warn "No restart JSON"; return nothing)
-    restart_path = joinpath(rdir, sort(restarts)[end])
+    # Find restart JSON in output/ subdirectory (RASPA3 convention)
+    output_dir = joinpath(rdir, "output")
+    if !isdir(output_dir)
+        @warn "No output/ directory in $rdir"
+        return nothing
+    end
 
-    raspa_out = parse_raspa3_output(rdir)
-    @printf("  [GCMC] N_ads = %.1f\n", raspa_out["n_ads"])
+    restarts = sort(filter(f -> startswith(f, "restart_") && endswith(f, ".json"),
+                           readdir(output_dir)))
+    if isempty(restarts)
+        @warn "No restart JSON found in $output_dir"
+        return nothing
+    end
+    restart_path = joinpath(output_dir, restarts[end])
+
+    # Parse N_ads from restart JSON (most reliable)
+    raspa_out = Dict{String,Any}("n_ads" => NaN)
+    try
+        restart_data = JSON.parsefile(restart_path)
+        for (k, v) in restart_data
+            if v isa AbstractVector && !isempty(v) && v[1] isa AbstractVector
+                raspa_out["n_ads"] = Float64(length(v) ÷ wp.atoms_per_mol)
+                break
+            end
+        end
+    catch e
+        @warn "Failed to parse restart JSON" exception=e
+    end
+    @printf("  [GCMC] N_ads = %.0f molecules\n", raspa_out["n_ads"])
 
     return (restart=restart_path, output=raspa_out, dir=rdir)
 end
 
 # ════════════════════════════════════════════════════════════════
-# Step 2: Reload adsorbate
+# Step 2: Build / reload LAMMPS data file
 # ════════════════════════════════════════════════════════════════
 
-function step_reload!(wp::WorkflowParams, iteration::Int,
-                       prev_data::String, restart_json::String)
-    combined = joinpath(iter_dir(wp, iteration), "combined.lmp")
-    println("  [RELOAD] Swapping adsorbate...")
-    reload_adsorbate(prev_data, restart_json, combined)
-    return combined
+function step_build_data!(wp::WorkflowParams, cycle::Int,
+                           restart_json::String,
+                           prev_data::String)
+    cdir = cycle_dir(wp, cycle)
+    data_file = joinpath(cdir, "loaded.lmp")
+
+    if cycle == 1
+        # First cycle: build from Ovito data + RASPA3 ethanol
+        println("  [BUILD] Cycle 1: Ovito framework + RASPA3 ethanol...")
+        src = structures_path()
+        cfg = ZeoliteConfig(
+            ovito_data    = joinpath(src, "MFI_SI.data"),
+            raspa_restart = restart_json,
+            output_data   = data_file,
+        )
+        fw = read_and_remap_framework(cfg)
+        add_framework_topology!(fw, cfg)
+        mols = read_raspa3_ethanol(cfg, fw.box_dimensions)
+        merge_framework_ethanol!(fw, mols, cfg)
+        write_complete_data(data_file, fw, cfg)
+    else
+        # Subsequent cycles: reload adsorbate into previous NPT output
+        println("  [BUILD] Cycle $cycle: reload adsorbate into NPT framework...")
+        reload_adsorbate(prev_data, restart_json, data_file)
+    end
+
+    # Verify
+    check = read_lammps_data(data_file; verbose=false)
+    ntot = size(check.coords, 1)
+    neth = ntot - wp.nfw_atoms
+    @printf("  [BUILD] Atoms: %d (%d fw + %d ethanol = %d molecules)\n",
+            ntot, wp.nfw_atoms, neth, neth ÷ wp.atoms_per_mol)
+
+    return data_file
 end
 
 # ════════════════════════════════════════════════════════════════
-# Step 3: LAMMPS NPT — copy user's input + data + table
+# Step 3: LAMMPS NPT-MD
+#   - Copies run_npt.in + data + table to cycle_NN/lammps/
+#   - Looks for npt_final.data in output
 # ════════════════════════════════════════════════════════════════
 
-function step_npt!(wp::WorkflowParams, iteration::Int,
-                    data_file::String, table_path::String)
-    ldir = joinpath(iter_dir(wp, iteration), "lammps")
+
+
+
+
+function step_npt!(wp::WorkflowParams, cycle::Int, data_file::String)
+    ldir = joinpath(cycle_dir(wp, cycle), "lammps")
     mkpath(ldir)
 
-    cp(data_file, joinpath(ldir, basename(data_file)); force=true)
-    cp(table_path, joinpath(ldir, basename(table_path)); force=true)
+    # Copy data file as loaded.lmp
+    data_name = "loaded.lmp"
+    cp(data_file, joinpath(ldir, data_name); force=true)
 
-    if isfile(wp.lammps_input)
-        cp(wp.lammps_input, joinpath(ldir, basename(wp.lammps_input)); force=true)
-    else
-        @warn "LAMMPS input not found: $(wp.lammps_input)"
+    # Copy table
+    table_src = joinpath(wp.base_dir, wp.table_file)
+    cp(table_src, joinpath(ldir, wp.table_file); force=true)
+
+    # Copy LAMMPS input script
+    input_src = wp.lammps_input
+    if !isfile(input_src)
+        input_src = joinpath(wp.base_dir, "run_npt.in")
+    end
+    if !isfile(input_src)
+        @warn "LAMMPS input not found: $input_src"
         return nothing
     end
+    cp(input_src, joinpath(ldir, "run_npt.in"); force=true)
 
+    # Run LAMMPS
     println("  [NPT] Running LAMMPS...")
+    t0 = time()
     try
-        run(Cmd(`$(wp.lammps_exe) -in $(basename(wp.lammps_input))`, dir=ldir); wait=true)
+        #run(Cmd(Cmd(split(wp.lammps_exe)), `-in`, `run_npt.in`; dir=ldir))
+        #lammps_cmd = Cmd(`$(split(wp.lammps)) -in run_npt.in`; dit=1dir)
+        lammps_cmd = Cmd(`$(split(wp.lammps_exe)) -in run_npt.in`; dir=ldir)
+        run(lammps_cmd)
     catch e
         @warn "LAMMPS failed" exception=e
         return nothing
     end
+    @printf("  [NPT] Done (%.1f s)\n", time()-t0)
 
-    # Find output data
-    outputs = filter(f -> (endswith(f,".data")||endswith(f,".lmp")) &&
-                          f != basename(data_file), readdir(ldir))
-    isempty(outputs) && (@warn "No LAMMPS output"; return nothing)
-    output_data = joinpath(ldir, outputs[end])
+    # Find output data file
+    output_data = ""
+    for name in ["npt_final.data", "loaded_npt_final.data",
+                  "npt_final.lmp", "loaded_npt_final.lmp"]
+        f = joinpath(ldir, name)
+        isfile(f) && (output_data = f; break)
+    end
+    if isempty(output_data)
+        for f in readdir(ldir)
+            fp = joinpath(ldir, f)
+            if isfile(fp) && f != data_name && f != "run_npt.in" &&
+               (endswith(f, ".data") || endswith(f, ".lmp"))
+                output_data = fp
+                break
+            end
+        end
+    end
+    if isempty(output_data)
+        @warn "No LAMMPS output found. Files: $(readdir(ldir))"
+        return nothing
+    end
+    println("  [NPT] Output: $(basename(output_data))")
 
+    # Parse log
     log_file = joinpath(ldir, "log.lammps")
     log_data = isfile(log_file) ? parse_lammps_log(log_file) : Dict{String,Vector{Float64}}()
     cell = extract_cell_params(log_data)
-    @printf("  [NPT] a=%.3f b=%.3f c=%.3f V=%.1f\n", cell.a, cell.b, cell.c, cell.volume)
+    @printf("  [NPT] a=%.4f b=%.4f c=%.4f V=%.1f\n",
+            cell.a, cell.b, cell.c, cell.volume)
 
     return (data=output_data, cell=cell, log=log_data, dir=ldir)
 end
 
 # ════════════════════════════════════════════════════════════════
-# Step 4: CIF
+# Step 4: Extract distorted CIF
 # ════════════════════════════════════════════════════════════════
 
-function step_write_cif!(wp::WorkflowParams, iteration::Int, data_file::String)
-    cif_out = joinpath(iter_dir(wp, iteration), "framework_relaxed.cif")
-    data = LammpsDataReader.read_lammps_data(data_file; verbose=false)
+function step_write_cif!(wp::WorkflowParams, cycle::Int, data_file::String)
+    cdir = cycle_dir(wp, cycle)
+    cif_out = joinpath(cdir, "distorted.cif")
+
+    data = read_lammps_data(data_file; verbose=false)
 
     fw_types = [1, 2]
     p = TOML.parsefile(wp.params_toml)
-    al = get(p["framework"], "Al_type", 0)
+    fw = get(p, "silica", get(p, "framework", Dict()))
+    al = get(fw, "Al_type", 0)
+    
+    #p = TOML.parsefile(wp.params_toml)
+    #al = get(p["framework"], "Al_type", 0)
+
     al > 0 && push!(fw_types, al)
 
     write_cif(cif_out, data;
               framework_types=fw_types,
-              type_elements=Dict(1=>"Si",2=>"O",3=>"Al"),
-              comment=@sprintf("cycle %d P=%.1e Pa", iteration, wp.pressure))
+              type_elements=Dict(1=>"Si", 2=>"O", 3=>"Al"),
+              comment=@sprintf("cycle %d P=%.1e Pa", cycle, wp.pressure))
+
     return cif_out
 end
 
 # ════════════════════════════════════════════════════════════════
-# Step 5: Analysis
+# Step 5: Analysis — strain, loading, channel occupancy
 # ════════════════════════════════════════════════════════════════
 
-function step_analyze!(wp::WorkflowParams, iteration::Int,
-                        npt_result, gcmc_out::Dict,
+function step_analyze!(wp::WorkflowParams, cycle::Int,
+                        cell::NamedTuple, raspa_out::Dict,
                         ref_cell::NamedTuple, data_file::String)
-    strain = compute_strain(npt_result.cell, ref_cell)
+    strain = compute_strain(cell, ref_cell)
 
-    data = LammpsDataReader.read_lammps_data(data_file; verbose=false)
-    occ = analyze_channel_occupancy(data.coords, data.atom_labels,
-                                     Set([3,4,5,6]), data.box_dimensions)
-    n_ads = get(gcmc_out, "n_ads", NaN)
+    data = read_lammps_data(data_file; verbose=false)
+    occ = analyze_channel_occupancy(
+        data.coords, data.atom_labels,
+        Set([3, 4, 5, 6]),   # adsorbate types (silica)
+        data.box_dimensions)
 
-    @printf("  [ANALYSIS] N=%d ε_V=%.2e str=%d sin=%d int=%d\n",
-            round(Int, n_ads), strain.εV,
+    n_ads = get(raspa_out, "n_ads", NaN)
+
+    @printf("  [ANALYSIS] N_ads=%.0f  ε_V=%.4e\n", n_ads, strain.εV)
+    @printf("  [ANALYSIS] straight=%d  sinusoidal=%d  intersection=%d\n",
             occ["straight"], occ["sinusoidal"], occ["intersection"])
 
     summary = Dict{String,Any}(
-        "iteration"=>iteration, "pressure"=>wp.pressure, "n_ads"=>n_ads,
-        "n_straight"=>occ["straight"], "n_sinusoidal"=>occ["sinusoidal"],
-        "n_intersection"=>occ["intersection"],
-        "a"=>npt_result.cell.a, "b"=>npt_result.cell.b, "c"=>npt_result.cell.c,
-        "alpha"=>npt_result.cell.alpha, "beta"=>npt_result.cell.beta,
-        "gamma"=>npt_result.cell.gamma, "volume"=>npt_result.cell.volume,
-        "strain_a"=>strain.εa, "strain_b"=>strain.εb,
-        "strain_c"=>strain.εc, "strain_V"=>strain.εV)
+        "iteration" => cycle, "pressure" => wp.pressure,
+        "n_ads" => n_ads,
+        "n_straight" => occ["straight"],
+        "n_sinusoidal" => occ["sinusoidal"],
+        "n_intersection" => occ["intersection"],
+        "a" => cell.a, "b" => cell.b, "c" => cell.c,
+        "alpha" => cell.alpha, "beta" => cell.beta,
+        "gamma" => cell.gamma, "volume" => cell.volume,
+        "strain_a" => strain.εa, "strain_b" => strain.εb,
+        "strain_c" => strain.εc, "strain_V" => strain.εV,
+    )
 
     write_cycle_summary(joinpath(wp.base_dir, "convergence.csv"), summary)
     return summary
 end
 
 # ════════════════════════════════════════════════════════════════
-# Convergence
+# Convergence check
 # ════════════════════════════════════════════════════════════════
 
 function check_convergence(history::Vector{Dict{String,Any}}, wp::WorkflowParams)
@@ -308,23 +474,30 @@ function check_convergence(history::Vector{Dict{String,Any}}, wp::WorkflowParams
     length(history) < n && return false
     recent = history[end-n+1:end]
     for key in ["volume", "n_ads"]
-        vals = Float64[r[key] for r in recent if !isnan(get(r,key,NaN))]
+        vals = Float64[r[key] for r in recent if !isnan(get(r, key, NaN))]
         length(vals) < n && continue
         mean(vals) > 0 || continue
-        std(vals)/mean(vals) > wp.convergence_tol && return false
+        std(vals) / mean(vals) > wp.convergence_tol && return false
     end
     return true
 end
 
 # ════════════════════════════════════════════════════════════════
-# Main loop
+# Main workflow loop
 # ════════════════════════════════════════════════════════════════
 
 """
     run_gcmc_md_workflow(wp::WorkflowParams)
 
 Run the iterative GCMC/MD workflow. All files are created under
-`wp.base_dir`, which should be the user's project directory.
+`wp.base_dir`.
+
+Each cycle:
+  1. RASPA3 GCMC → ethanol positions (JSON restart)
+  2. Build/reload LAMMPS data file
+  3. LAMMPS NPT-MD → relaxed structure
+  4. Extract distorted CIF → feeds next GCMC
+  5. Analysis → convergence.csv
 """
 function run_gcmc_md_workflow(wp::WorkflowParams)
     mkpath(wp.base_dir)
@@ -333,55 +506,83 @@ function run_gcmc_md_workflow(wp::WorkflowParams)
     println("║  JZeoMCMD — GCMC/NPT-MD Workflow                 ║")
     println("╚═══════════════════════════════════════════════════╝")
     @printf("  T = %.1f K   P = %.1e Pa\n", wp.temperature, wp.pressure)
-    println("  Working dir:  $(wp.base_dir)")
+    println("  Workdir:      $(wp.base_dir)")
     println("  RASPA inputs: $(wp.raspa_input_dir)")
     println("  LAMMPS input: $(wp.lammps_input)")
-    println("  Params:       $(wp.params_toml)\n")
+    println("  RASPA steps:  init=$(wp.raspa_n_init) equil=$(wp.raspa_n_equil) prod=$(wp.raspa_n_prod)")
+    println("  LAMMPS steps: NVT=$(wp.lammps_nvt_ramp_steps)+$(wp.lammps_nvt_hold_steps) NPT=$(wp.lammps_npt_steps)")
+    println("  Convergence:  CV < $(wp.convergence_tol*100)% over $(wp.convergence_window) cycles")
+    println()
 
+    # Ensure table exists
     table_path = ensure_tables!(wp)
 
+    # Initial state
     current_cif  = wp.initial_cif
     current_data = wp.initial_data
     history = Dict{String,Any}[]
 
-    # Reference cell
-    ref = LammpsDataReader.read_lammps_data(current_data; verbose=false)
+    # Reference cell for strain
+    ref = read_lammps_data(current_data; verbose=false)
     bd = ref.box_dimensions
     ref_cell = (a=bd[1,2]-bd[1,1], b=bd[2,2]-bd[2,1], c=bd[3,2]-bd[3,1],
                 alpha=90.0, beta=90.0, gamma=90.0,
                 volume=prod([bd[d,2]-bd[d,1] for d in 1:3]))
+    @printf("  Reference cell: a=%.3f b=%.3f c=%.3f V=%.1f\n\n",
+            ref_cell.a, ref_cell.b, ref_cell.c, ref_cell.volume)
 
-    for iter in 1:wp.max_iterations
-        println("\n═══ Iteration $iter / $(wp.max_iterations) ═══")
+    for cycle in 1:wp.max_iterations
+        println("═" ^ 60)
+        @printf("  CYCLE %d / %d   \n", cycle, wp.max_iterations)
+        println("═" ^ 60)
 
-        gcmc = step_gcmc!(wp, iter, current_cif)
-        gcmc_out = gcmc !== nothing ? gcmc.output : Dict{String,Any}("n_ads"=>NaN)
-
-        if gcmc !== nothing
-            combined = step_reload!(wp, iter, current_data, gcmc.restart)
-        else
-            combined = joinpath(iter_dir(wp, iter), "combined.lmp")
-            cp(current_data, combined; force=true)
-        end
-
-        npt = step_npt!(wp, iter, combined, table_path)
-        npt === nothing && (println("  ✗ NPT failed"); break)
-
-        new_cif = step_write_cif!(wp, iter, npt.data)
-        summary = step_analyze!(wp, iter, npt, gcmc_out, ref_cell, npt.data)
-        push!(history, summary)
-
-        current_cif  = new_cif
-        current_data = npt.data
-
-        if check_convergence(history, wp)
-            println("\n★ Converged after $iter iterations ★")
+        # 1. GCMC
+        println("\n  ── Step 1: RASPA3 GCMC ──")
+        println("    CIF: $(basename(current_cif))")
+        gcmc = step_gcmc!(wp, cycle, current_cif)
+        if gcmc === nothing
+            println("  ✗ GCMC failed — stopping.")
             break
         end
+
+        # 2. Build/reload data file
+        println("\n  ── Step 2: Build LAMMPS data file ──")
+        data_file = step_build_data!(wp, cycle, gcmc.restart, current_data)
+
+        # 3. NPT-MD
+        println("\n  ── Step 3: LAMMPS NPT-MD ──")
+        npt = step_npt!(wp, cycle, data_file)
+        if npt === nothing
+            println("  ✗ NPT failed — stopping.")
+            break
+        end
+
+        # 4. Distorted CIF
+        println("\n  ── Step 4: Extract distorted CIF ──")
+        new_cif = step_write_cif!(wp, cycle, npt.data)
+
+        # 5. Analysis
+        println("\n  ── Step 5: Analysis ──")
+        summary = step_analyze!(wp, cycle, npt.cell, gcmc.output,
+                                 ref_cell, npt.data)
+        push!(history, summary)
+
+        # Update for next cycle
+        current_cif  = new_cif      # next GCMC uses distorted CIF
+        current_data = npt.data     # next reload uses NPT output
+
+        # Convergence
+        if check_convergence(history, wp)
+            println("\n★ Converged after $cycle iterations ★")
+            break
+        end
+        println()
     end
 
-    println("\n═══ Done: $(length(history)) iterations ═══")
-    println("  $(joinpath(wp.base_dir, "convergence.csv"))")
+    println("\n" * "═" ^ 60)
+    println("  WORKFLOW COMPLETE: $(length(history)) cycles")
+    println("  Results: $(joinpath(wp.base_dir, "convergence.csv"))")
+    println("═" ^ 60)
 end
 
 # ════════════════════════════════════════════════════════════════
@@ -393,7 +594,6 @@ end
                           base_dir=".", temperature=300.0)
 
 Create folder structure for multiple pressure points.
-Each gets its own config.toml that can be passed to the workflow.
 """
 function setup_pressure_sweep(pressures::Vector{Float64},
                                initial_data::String, initial_cif::String;
@@ -405,10 +605,8 @@ function setup_pressure_sweep(pressures::Vector{Float64},
         pname = @sprintf("P_%.1e", p)
         pdir = joinpath(base_dir, pname)
         mkpath(pdir)
-
         cp(initial_data, joinpath(pdir, basename(initial_data)); force=true)
         cp(initial_cif, joinpath(pdir, basename(initial_cif)); force=true)
-
         open(joinpath(pdir, "config.toml"), "w") do io
             println(io, "pressure = $p")
             println(io, "temperature = $temperature")

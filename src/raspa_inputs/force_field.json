@@ -2,14 +2,24 @@
   "PseudoAtoms" :
   [
     {
-      "name" : "O",
+      "name" : "Si",
       "framework" : true,
       "print_to_output" : true,
-      "element" : "O",
-      "print_as" : "O",
+      "element" : "Si",
+      "print_as" : "Si",
       "mass" : 28.0855,
-      "charge" : -1.025,
-      "source" : "P. Bai, M. Tsapatsis, J. I. Siepmann, J. Phys. Chem. C 2013, 117, 24375-24387"
+      "charge" : 0.5236,
+      "source" : "H-S 1994: Si bonded to 4 Oss/Oas, q = 4 × 0.1309"
+    },
+    {
+      "name" : "Si_b",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "Si",
+      "print_as" : "Si",
+      "mass" : 28.0855,
+      "charge" : 0.5025,
+      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Ob, q = 3(0.1309) + 0.1098"
     },
     {
       "name" : "Al",
@@ -18,148 +28,58 @@
       "element" : "Al",
       "print_as" : "Al",
       "mass" : 26.98154,
-      "charge" :  1.75,
-      "source" : "P. Bai, M. Tsapatsis, J. I. Siepmann, J. Phys. Chem. C 2013, 117, 24375-24387"
+      "charge" : 0.4231,
+      "source" : "H-S 1995: Al bonded to 3 Oas + 1 Ob, q = 3(0.1199) + 0.0634"
     },
     {
-      "name" : "Si",
+      "name" : "Oss",
       "framework" : true,
       "print_to_output" : true,
-      "element" : "Si",
-      "print_as" : "Si",
-      "mass" : 28.0855,
-      "charge" :  2.05,
-      "source" : "P. Bai, M. Tsapatsis, J. I. Siepmann, J. Phys. Chem. C 2013, 117, 24375-24387"
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.9994,
+      "charge" : -0.2618,
+      "source" : "H-S 1994: O bridging Si-O-Si, q = -2 × 0.1309"
     },
     {
-      "name" : "He",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "He",
-      "print_as" : "He",
-      "mass" : 4.002602,
-      "charge" :  0.0,
-      "source" : "J.O. Hirschfelder et al., Molecular Theory of Gases and Liquids, Wiley, New York, 1954, p. 1114"
-    },
-    {
-      "name" : "C_co2",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 12.0,
-      "charge" :  0.6512,
-      "source" : "A. Garcia-Sanchez et al., J. Phys. Chem. C 2009, 113, 8814-8820"
-    },
-    {
-      "name" : "O_co2",
-      "framework" : false,
+      "name" : "Oas",
+      "framework" : true,
       "print_to_output" : true,
       "element" : "O",
       "print_as" : "O",
       "mass" : 15.9994,
-      "charge" : -0.3256,
-      "source" : "A. Garcia-Sanchez et al., J. Phys. Chem. C 2009, 113, 8814-8820"
+      "charge" : -0.2508,
+      "source" : "H-S 1995: O bridging Si-O-Al (no H), q = -(0.1309 + 0.1199)"
     },
     {
-      "name" : "O_o2",
-      "framework" : false,
+      "name" : "Ob",
+      "framework" : true,
       "print_to_output" : true,
       "element" : "O",
       "print_as" : "O",
       "mass" : 15.9994,
-      "charge" : -0.112,
-      "source" : "A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174"
+      "charge" : -0.5288,
+      "source" : "H-S 1995: O in Si-O(H)-Al, q = -(0.1098 + 0.0634 + 0.3556)"
     },
     {
-      "name" : "O_com",
-      "framework" : false,
-      "print_to_output" : false,
+      "name" : "O",
+      "framework" : true,
+      "print_to_output" : true,
       "element" : "O",
       "print_as" : "O",
-      "mass" : 0.0,
-      "charge" :  0.224,
-      "source" : "A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174"
+      "mass" : 15.9994,
+      "charge" : -0.2618,
+      "source" : "Alias for Oss — used when CIF has generic O labels (pure silica)"
     },
     {
-      "name" : "N_n2",
-      "framework" : false,
+      "name" : "Hb",
+      "framework" : true,
       "print_to_output" : true,
-      "element" : "N",
-      "print_as" : "N",
-      "mass" : 14.00674,
-      "charge" : -0.405,
-      "source" : "A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174"
-    },
-    {
-      "name" : "N_com",
-      "framework" : false,
-      "print_to_output" : false,
-      "element" : "N",
-      "print_as" : "-",
-      "mass" : 0.0,
-      "charge" :  0.810,
-      "source" : "A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174"
-    },
-    {
-      "name" : "Ar",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "Ar",
-      "print_as" : "Ar", 
-      "mass" : 39.948,
-      "charge" :  0.0,
-      "source" : "A. Martin-Calvo et al. , Phys. Chem. Chem. Phys. 2011, 13, 11165-11174"
-    },
-    {
-      "name" : "CH4",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 16.04246,
-      "charge" :  0.0,
-      "source" : "M. G. Martin et al., J. Chem. Phys. 2001, 114, 7174-7181"
-    },
-    {
-      "name" : "CH3",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 15.03452,
-      "charge" :  0.0,
-      "source" : "D. Dubbeldam et al., J. Phys. Chem. B, 108(33), 12301-12313"
-    },
-    {
-      "name" : "CH2",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 14.02658,
-      "charge" :  0.0,
-      "source" : "D. Dubbeldam et al., J. Phys. Chem. B, 108(33), 12301-12313"
-    },
-    {
-      "name" : "CH",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 13.01864,
-      "charge" :  0.0,
-      "source" : "D. Dubbeldam et al., J. Phys. Chem. B, 108(33), 12301-12313"
-    },
-    {
-      "name" : "C",
-      "framework" : false,
-      "print_to_output" : true,
-      "element" : "C",
-      "print_as" : "C",
-      "mass" : 12.0,
-      "charge" :  0.0,
-      "source" : "D. Dubbeldam et al., J. Phys. Chem. B, 108(33), 12301-12313"
+      "element" : "H",
+      "print_as" : "H",
+      "mass" : 1.008,
+      "charge" : 0.3556,
+      "source" : "H-S 1995: Brønsted proton, q = +0.3556"
     },
     {
       "name" : "CH3_eth",
@@ -168,8 +88,8 @@
       "element" : "C",
       "print_as" : "C",
       "mass" : 15.035,
-      "charge" :  0.0,
-      "source" : "TraPPE"
+      "charge" : 0.0,
+      "source" : "TraPPE-UA ethanol"
     },
     {
       "name" : "CH2_eth",
@@ -178,8 +98,8 @@
       "element" : "C",
       "print_as" : "C",
       "mass" : 14.027,
-      "charge" :  0.265,
-      "source" : "TraPPE"
+      "charge" : 0.265,
+      "source" : "TraPPE-UA ethanol"
     },
     {
       "name" : "O_eth",
@@ -189,7 +109,7 @@
       "print_as" : "O",
       "mass" : 15.999,
       "charge" : -0.700,
-      "source" : "TraPPE"
+      "source" : "TraPPE-UA ethanol"
     },
     {
       "name" : "H_eth",
@@ -198,74 +118,94 @@
       "element" : "H",
       "print_as" : "H",
       "mass" : 1.008,
-      "charge" :  0.435,
-      "source" : "TraPPE"
+      "charge" : 0.435,
+      "source" : "TraPPE-UA ethanol"
+    },
+    {
+      "name" : "He",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "He",
+      "print_as" : "He",
+      "mass" : 4.002602,
+      "charge" : 0.0,
+      "source" : "Hirschfelder 1954 (helium void fraction)"
     }
-
   ],
-  "SelfInteractions" : 
+  "SelfInteractions" :
   [
     {
-      "name" : "O",
-      "type" : "lennard-jones",    
-      "parameters" : [53.0, 3.30],
-      "source" : "P. Bai, M. Tsapatsis, J. I. Siepmann, J. Phys. Chem. C 2013, 117, 24375-24387"
-    },
-    {
       "name" : "Si",
-      "type" : "lennard-jones",    
-      "parameters" : [22.0, 2.30],
-      "source" : "P. Bai, M. Tsapatsis, J. I. Siepmann, J. Phys. Chem. C 2013, 117, 24375-24387"
-    },
-    {
-      "name" : "CH4",
-      "type" : "lennard-jones",    
-      "parameters" : [158.5, 3.72],
-      "source" : "M. G. Martin et al., J. Chem. Phys. 2001, 114, 7174-7181."
-    },
-    {
-      "name" : "O_co2",
-      "type" : "lennard-jones",    
-      "parameters" : [85.671, 3.017],
-      "source" : "A. Garcia-Sanchez et al., J. Phys. Chem. C 2009, 113, 8814-8820"
-    },
-    {
-      "name" : "C_co2",
-      "type" : "lennard-jones",    
-      "parameters" : [29.933, 2.745],
-      "source" : "A. Garcia-Sanchez et al., J. Phys. Chem. C 2009, 113, 8814-8820"
-    },
-    {
-      "name" : "CH3",
       "type" : "lennard-jones",
-      "parameters" : [98.0, 3.75],
-      "source" : "TraPPE"
+      "parameters" : [22.0, 2.30],
+      "source" : "Bai 2013 (fw-adsorbate vdW)"
+    },
+    {
+      "name" : "Si_b",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Same LJ as Si — only charge differs"
+    },
+    {
+      "name" : "Al",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Approximated as Si (Calero/Bai has no explicit Al-hydrocarbon LJ)"
+    },
+    {
+      "name" : "O",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Alias for Oss"
+    },
+    {
+      "name" : "Oss",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Bai 2013"
+    },
+    {
+      "name" : "Oas",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Same LJ as Oss — all framework O same vdW"
+    },
+    {
+      "name" : "Ob",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Same LJ as Oss"
+    },
+    {
+      "name" : "Hb",
+      "type" : "lennard-jones",
+      "parameters" : [0.0, 0.0],
+      "source" : "No LJ on Brønsted proton (Coulomb only)"
     },
     {
       "name" : "CH3_eth",
       "type" : "lennard-jones",
       "parameters" : [98.0, 3.75],
-      "source" : "TraPPE"
+      "source" : "TraPPE-UA"
     },
     {
       "name" : "CH2_eth",
       "type" : "lennard-jones",
       "parameters" : [46.0, 3.95],
-      "source" : "TraPPE"
+      "source" : "TraPPE-UA"
     },
     {
       "name" : "O_eth",
       "type" : "lennard-jones",
       "parameters" : [93.0, 3.02],
-      "source" : "TraPPE"
+      "source" : "TraPPE-UA"
     },
     {
       "name" : "H_eth",
       "type" : "lennard-jones",
       "parameters" : [0.0, 0.0],
-      "source" : "TraPPE"
+      "source" : "TraPPE-UA"
     }
-
   ],
   "MixingRule" : "Lorentz-Berthelot",
   "TruncationMethod" : "shifted",

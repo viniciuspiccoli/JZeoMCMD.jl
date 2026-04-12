@@ -1,114 +1,150 @@
 #!/usr/bin/env julia
 """
-setup_pressure_sweep.jl
+    setup_pressure_sweep(pressures; wp_template=WorkflowParams(), base_dir=".", run=false)
 
-Create folder structure for GCMC/MD simulations at multiple pressures.
-Each pressure gets its own directory with initial files copied in.
+Create folder structure for multiple pressure points and optionally run them.
+
+Each pressure gets its own directory with copies of the initial CIF and data file.
+The LAMMPS input is auto-generated from WorkflowParams settings.
 
 Usage:
-  julia setup_pressure_sweep.jl --pressures 1e3,1e4,1e5,5e5,1e6 \\
-      --initial-data loaded_zeolite.lmp \\
-      --initial-cif relaxed_MFI.cif \\
-      --temperature 300 \\
-      --base-dir ./MFI_ethanol_sweep
+    using JZeoMCMD
 
-Creates:
-  MFI_ethanol_sweep/
-  ├── P_1.0e3/
-  │   ├── iter_001/
-  │   ├── initial.lmp       (copy of data file)
-  │   ├── framework.cif     (copy of CIF)
-  │   ├── config.toml       (pressure, temperature, paths)
-  │   └── convergence.csv   (tracking file, created during run)
-  ├── P_1.0e4/
-  └── ...
+    wp = WorkflowParams(
+        initial_cif  = "MFI_SI.cif",
+        initial_data = "MFI_SI.data",
+        temperature  = 300.0,
+        lammps_exe   = "mpirun -np 4 lmp_mpi",
+        raspa_n_prod = 50000,
+        lammps_npt_steps = 1000000,
+    )
+
+    # Just set up folders:
+    setup_pressure_sweep([1e3, 1e4, 1e5, 5e5, 1e6]; wp_template=wp, base_dir="./sweep")
+
+    # Set up AND run everything:
+    setup_pressure_sweep([1e3, 1e4, 1e5]; wp_template=wp, base_dir="./sweep", run=true)
 """
-
-#using Printf
-
-function main(args=ARGS)
-    pressures = Float64[]
-    initial_data = ""
-    initial_cif = ""
-    temperature = 300.0
-    base_dir = "./pressure_sweep"
-    max_iter = 50
-
-    i = 1
-    while i <= length(args)
-        a = args[i]
-        if a == "--pressures" && i < length(args)
-            pressures = parse.(Float64, split(args[i+1], ",")); i += 2
-        elseif a == "--initial-data" && i < length(args)
-            initial_data = args[i+1]; i += 2
-        elseif a == "--initial-cif" && i < length(args)
-            initial_cif = args[i+1]; i += 2
-        elseif a == "--temperature" && i < length(args)
-            temperature = parse(Float64, args[i+1]); i += 2
-        elseif a == "--base-dir" && i < length(args)
-            base_dir = args[i+1]; i += 2
-        elseif a == "--max-iter" && i < length(args)
-            max_iter = parse(Int, args[i+1]); i += 2
-        else
-            i += 1
-        end
-    end
-
-    if isempty(pressures) || isempty(initial_data) || isempty(initial_cif)
-        println("""
-        Usage: julia setup_pressure_sweep.jl \\
-            --pressures 1e3,1e4,1e5,5e5,1e6 \\
-            --initial-data loaded_zeolite.lmp \\
-            --initial-cif relaxed_MFI.cif \\
-            [--temperature 300] [--base-dir ./sweep] [--max-iter 50]
-        """)
-        return
-    end
-
+function setup_pressure_sweep(pressures::Vector{Float64};
+                               wp_template::WorkflowParams = WorkflowParams(),
+                               base_dir::String = ".",
+                               run::Bool = false)
     mkpath(base_dir)
-    println("Setting up pressure sweep in $base_dir")
+
+    # Check initial files exist
+    initial_cif  = wp_template.initial_cif
+    initial_data = wp_template.initial_data
+
+    if isempty(initial_cif) || isempty(initial_data)
+        error("Set wp_template.initial_cif and wp_template.initial_data before calling setup_pressure_sweep")
+    end
+    !isfile(initial_cif)  && error("CIF not found: $initial_cif")
+    !isfile(initial_data) && error("Data file not found: $initial_data")
+
+    println("╔═══════════════════════════════════════════════════╗")
+    println("║  JZeoMCMD — Pressure Sweep Setup                 ║")
+    println("╚═══════════════════════════════════════════════════╝")
+    @printf("  T = %.1f K\n", wp_template.temperature)
     println("  Pressures: $(join([@sprintf("%.1e", p) for p in pressures], ", ")) Pa")
-    println("  Temperature: $temperature K")
+    println("  Base dir:  $base_dir")
+    println("  CIF:       $(basename(initial_cif))")
+    println("  Data:      $(basename(initial_data))")
+    println("  LAMMPS:    $(wp_template.lammps_exe)")
+    println("  RASPA:     $(wp_template.raspa_exe)")
+    println()
+
+    pressure_dirs = String[]
 
     for p in pressures
         pname = @sprintf("P_%.1e", p)
         pdir = joinpath(base_dir, pname)
-        mkpath(joinpath(pdir, "iter_001", "raspa"))
-        mkpath(joinpath(pdir, "iter_001", "lammps"))
+        mkpath(pdir)
 
         # Copy initial files
-        cp(initial_data, joinpath(pdir, "initial.lmp"); force=true)
-        cp(initial_cif, joinpath(pdir, "framework.cif"); force=true)
+        cp(initial_cif, joinpath(pdir, basename(initial_cif)); force=true)
+        cp(initial_data, joinpath(pdir, basename(initial_data)); force=true)
 
-        # Write config for this pressure point
-        open(joinpath(pdir, "config.toml"), "w") do io
-            println(io, "# Auto-generated by setup_pressure_sweep.jl")
-            println(io, "pressure = $p")
-            println(io, "temperature = $temperature")
-            println(io, "max_iterations = $max_iter")
-            println(io, "initial_data = \"initial.lmp\"")
-            println(io, "initial_cif = \"framework.cif\"")
+        # Copy table if it exists
+        table_src = joinpath(dirname(initial_data), wp_template.table_file)
+        if isfile(table_src)
+            cp(table_src, joinpath(pdir, wp_template.table_file); force=true)
         end
 
+        # Copy LAMMPS input if user provided one
+        if !isempty(wp_template.lammps_input) && isfile(wp_template.lammps_input)
+            cp(wp_template.lammps_input, joinpath(pdir, "run_npt.in"); force=true)
+        end
+
+        push!(pressure_dirs, pdir)
         println("  Created $pname/")
     end
 
-    # Write a master run script
+    # Write a run script for each pressure
+    open(joinpath(base_dir, "run_all.jl"), "w") do io
+        println(io, "# Auto-generated by setup_pressure_sweep")
+        println(io, "# Run: julia run_all.jl")
+        println(io, "# Or submit individual pressures to HPC queue")
+        println(io, "")
+        println(io, "using Pkg")
+        println(io, "Pkg.activate(joinpath(homedir(), \".julia\", \"dev\", \"JZeoMCMD\"))")
+        println(io, "using JZeoMCMD")
+        println(io, "")
+        for (i, p) in enumerate(pressures)
+            pname = @sprintf("P_%.1e", p)
+            pdir = pressure_dirs[i]
+            println(io, "println(\"\\n\" * \"═\"^60)")
+            println(io, "println(\"  $pname\")")
+            println(io, "println(\"═\"^60)")
+            println(io, "wp = WorkflowParams(")
+            println(io, "    base_dir       = \"$(joinpath(base_dir, pname))\",")
+            println(io, "    initial_cif    = \"$(joinpath(pdir, basename(initial_cif)))\",")
+            println(io, "    initial_data   = \"$(joinpath(pdir, basename(initial_data)))\",")
+            println(io, "    pressure       = $p,")
+            println(io, "    temperature    = $(wp_template.temperature),")
+            println(io, "    lammps_exe     = \"$(wp_template.lammps_exe)\",")
+            println(io, "    raspa_exe      = \"$(wp_template.raspa_exe)\",")
+            !isempty(wp_template.lammps_input) &&
+                println(io, "    lammps_input   = \"$(joinpath(pdir, "run_npt.in"))\",")
+            println(io, "    raspa_n_init   = $(wp_template.raspa_n_init),")
+            println(io, "    raspa_n_equil  = $(wp_template.raspa_n_equil),")
+            println(io, "    raspa_n_prod   = $(wp_template.raspa_n_prod),")
+            println(io, "    lammps_npt_steps      = $(wp_template.lammps_npt_steps),")
+            println(io, "    lammps_nvt_ramp_steps  = $(wp_template.lammps_nvt_ramp_steps),")
+            println(io, "    lammps_timestep        = $(wp_template.lammps_timestep),")
+            println(io, "    max_iterations = $(wp_template.max_iterations),")
+            println(io, ")")
+            println(io, "run_gcmc_md_workflow(wp)")
+            println(io, "")
+        end
+    end
+
+    # Also write a bash script for HPC submission
     open(joinpath(base_dir, "run_all.sh"), "w") do io
         println(io, "#!/bin/bash")
-        println(io, "# Run all pressure points (sequential)")
-        println(io, "# Modify to use sbatch/srun for HPC")
-        for p in pressures
-            pname = @sprintf("P_%.1e", p)
-            println(io, "echo \"=== $pname ===\"")
-            println(io, "cd $pname && julia ../scripts/run_workflow.jl --config config.toml && cd ..")
-        end
+        println(io, "# Run all pressure points sequentially")
+        println(io, "# For HPC: replace 'julia' with 'sbatch submit.sh' per pressure")
+        println(io, "julia run_all.jl")
     end
     chmod(joinpath(base_dir, "run_all.sh"), 0o755)
 
-    println("\nDone! Run with: cd $base_dir && bash run_all.sh")
-end
+    println("\n  Files created:")
+    println("    $base_dir/run_all.jl  — Julia script to run all pressures")
+    println("    $base_dir/run_all.sh  — Bash wrapper")
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
+    # Optionally run immediately
+    if run
+        println("\n  Running all pressures...\n")
+        for (i, p) in enumerate(pressures)
+            wp = deepcopy(wp_template)
+            pdir = pressure_dirs[i]
+            wp.base_dir    = pdir
+            wp.initial_cif = joinpath(pdir, basename(initial_cif))
+            wp.initial_data = joinpath(pdir, basename(initial_data))
+            wp.pressure    = p
+            if !isempty(wp_template.lammps_input) && isfile(joinpath(pdir, "run_npt.in"))
+                wp.lammps_input = joinpath(pdir, "run_npt.in")
+            end
+            run_gcmc_md_workflow(wp)
+        end
+    end
 end

@@ -1,82 +1,183 @@
 # ════════════════════════════════════════════════════════════════
-# ZeoMCMD Force Field Parameters
-# Single source of truth for both RASPA3 and LAMMPS
+# JZeoMCMD — Force Field Parameters (corrected)
+# Hill-Sauer charges used consistently in RASPA3 and LAMMPS.
 # ════════════════════════════════════════════════════════════════
 
-[framework]
-# Atom types in LAMMPS (after Ovito remap)
+# ── PURE SILICA ──────────────────────────────────────────────
+[silica]
 Si_type = 1
 O_type  = 2
-Al_type = 3   # set to 0 if pure silica
-H_acid_type = 0
 
-[framework.charges]
-# Hill-Sauer bond increments (LAMMPS)
-Si = 0.5236
-O  = -0.2618
+[silica.charges]
+# Hill-Sauer 1994 bond increment: δ = 0.1309 per Si-O bond
+Si = 0.5236     # +4×0.1309
+O  = -0.2618    # −2×0.1309
 
-# Bai 2013 (RASPA3)
-Si_raspa = 2.05
-O_raspa  = -1.025
-Al_raspa = 1.75
+[silica.masses]
+Si = 28.0855
+O  = 15.9994
 
-[framework.nonbonded]
-# A/r^9 repulsion parameters (kcal/mol · Å^9)
-A_Si = 186910.958224
-A_O  = 57412.472881
-A_Al = 186910.958224   # default = same as Si
+[silica.nonbonded]
+# A/r^9 (kcal/mol · Å^9), B=0.  For LAMMPS fw-fw only.
+A_Si_Si = 186910.958224
+A_Si_O  = 103590.638188
+A_O_O   = 57412.472881
 
-[framework.bonded]
-# Bond: class2  r0  K2  K3  K4
+[silica.bonded]
+# class2: E = K2(r-r0)^2 + K3(r-r0)^3 + K4(r-r0)^4
 Si_O = [1.6104, 459.0786, -672.4445, 443.3651]
 
-# Angles: class2  theta0  K2  K3  K4
-Si_O_Si = [150.0, 20.7015, 27.5506, 10.9930]    # center = O
-O_Si_O  = [113.0, 81.9691, -36.5814, 116.9558]   # center = Si
+# class2: E = K2(θ-θ0)^2 + K3(θ-θ0)^3 + K4(θ-θ0)^4
+# mHSFF values (Boulfelfel 2016) for 8/10-ring zeolites
+Si_O_Si = [150.0, 20.7015, 27.5506, 10.993]
+O_Si_O  = [113.0, 81.9691, -36.5814, 116.9558]
 
-# Dihedral: class2  V1 phi1 V2 phi2 V3 phi3
+# BondBond cross: M, r1, r2
+Si_O_Si_bb = [151.8742, 1.6104, 1.6104]
+O_Si_O_bb  = [0.0, 1.6104, 1.6104]   # Sholl uses 0.0
+
+# BondAngle cross: N1, N2, r1, r2
+Si_O_Si_ba = [9.239, 9.239, 1.6104, 1.6104]
+O_Si_O_ba  = [78.1239, 78.1239, 1.6104, 1.6104]
+
+# Dihedral: K1 phi1 K2 phi2 K3 phi3
 O_Si_O_Si = [0.0306, 0.0, -0.0105, 0.0, 0.0804, 0.0]
 
+# AngleAngleTorsion: M, θ1, θ2
+# ⚠ Sholl uses ORIGINAL HSFF θ₀ values, not mHSFF!
+O_Si_O_Si_aat = [-4.515, 112.02, 173.7651]
+
+# Improper: chi0, K0
+Si_improper = [0.0, 0.0]
+# Improper AngleAngle: M1 M2 M3 θ1 θ2 θ3
+# ⚠ Uses θ(O-Si-O) from the FF version in use
+Si_improper_aa = [-6.303, 0.0, 0.0, 112.02, 0.0, 112.02]
+
+# ── ALUMINOSILICATE (H-form) ─────────────────────────────────
+[alumino]
+Si_type    = 1
+Oss_type   = 2    # O bridging Si-O-Si
+Al_type    = 3
+Oas_type   = 4    # O bridging Si-O-Al (no H)
+Ob_type    = 5    # O in Si-O(H)-Al
+Hb_type    = 6    # Brønsted proton
+
+[alumino.charges]
+# Hill-Sauer 1995 bond increments
+Si   = 0.5236     # for Si bonded to 4 Oss (bulk)
+Si_b = 0.5025     # for Si bonded to 3 Oss + 1 Ob (next to defect)
+Al   = 0.4231     # 3×δ(Al-Oas) + δ(Al-Ob)
+Oss  = -0.2618
+Oas  = -0.2508    # -δ(Si-Oas) - δ(Al-Oas)
+Ob   = -0.5288    # -δ(Si-Ob) - δ(Al-Ob) - δ(Ob-Hb)
+Hb   = 0.3556     # +δ(Ob-Hb)
+
+[alumino.bond_increments]
+# δ values from Hill-Sauer 1995 Table 8
+# For bond A-B: A gets +δ, B gets -δ (A = cation)
+Si_Oss = 0.1309
+Si_Oas = 0.1309
+Si_Ob  = 0.1098
+Al_Oas = 0.1199
+Al_Ob  = 0.0634
+Ob_Hb  = 0.3556
+
+[alumino.masses]
+Si  = 28.0855
+Al  = 26.9815
+Oss = 15.9994
+Oas = 15.9994
+Ob  = 15.9994
+Hb  = 1.008
+
+[alumino.nonbonded]
+# A/r^9 for LAMMPS. Al uses same A as Si (no separate parameterization).
+A_Si = 186910.958224
+A_O  = 57412.472881    # same for Oss, Oas, Ob
+A_Al = 186910.958224   # approximation
+
+[alumino.bonds]
+# [r0, K2, K3, K4]  from Hill-Sauer 1995 Table 8
+Si_Oss = [1.6104, 459.0786, -672.4445, 443.3651]
+Si_Oas = [1.6157, 494.1042, -36.7016, 2150.6836]
+Si_Ob  = [1.6581, 370.5744, -569.4988, 3102.2502]
+Al_Oas = [1.7193, 328.685, -341.0143, 2189.0349]
+Al_Ob  = [1.9698, 86.8129, 26.3933, 758.4299]
+Ob_Hb  = [0.954, 656.8465, -1627.4874, 3684.1929]
+
+[alumino.angles]
+# [θ0, K2, K3, K4]
+Oss_Si_Oss = [112.02, 81.9691, -36.5814, 116.9558]
+Si_Oss_Si  = [173.7651, 20.7015, 27.5506, 10.993]
+Si_Ob_Al   = [136.6645, 195.295, 48.8575, 185.3481]
+Al_Oas_Si  = [162.4, 10.3454, 12.6366, 9.0038]
+Si_Ob_Hb   = [119.2823, 43.0215, -15.2099, 13.1396]
+Al_Ob_Hb   = [107.12, 43.9725, -53.4364, 103.3838]
+Oas_Al_Oas = [113.4, 300.052, -32.5659, 67.2591]
+Ob_Al_Oas  = [81.4988, 43.2829, -113.779, 202.1476]
+Oas_Si_Oss = [112.4279, 88.0709, -57.043, 92.4803]
+Oss_Si_Ob  = [107.6066, 99.6715, -33.1512, 10.7204]
+Oas_Si_Ob  = [102.9438, 103.827, 10.899, 0.6674]
+
+# ── ETHANOL (TraPPE-UA) ──────────────────────────────────────
 [ethanol]
-# TraPPE-UA model
 atoms_per_mol = 4
 atom_names = ["CH3", "CH2", "O_eth", "H_eth"]
-types  = [3, 4, 5, 6]
+
+# For pure silica: types 3-6.  For alumino: types 7-10.
+types_silica  = [3, 4, 5, 6]
+types_alumino = [7, 8, 9, 10]
+
 charges = [0.0, 0.265, -0.700, 0.435]
 masses  = [15.035, 14.027, 15.999, 1.008]
 
-# LJ self-interactions (ε/kB in K, σ in Å)
 [ethanol.lj]
+# ε/kB (K), σ (Å)
 CH3   = [98.0,  3.75]
 CH2   = [46.0,  3.95]
 O_eth = [93.0,  3.02]
 H_eth = [0.0,   0.0]
 
-# Bonds: r0(Å), K(K/Å²)  [RASPA3 harmonic convention]
 [ethanol.bonds]
+# r0 (Å), K (K/Å²)  — RASPA3 harmonic convention
 CH3_CH2   = [1.540, 50000.0]
 CH2_O_eth = [1.430, 50000.0]
 O_eth_H   = [0.945, 50000.0]
 
-# Angles: theta0(°), K(K/rad²)
 [ethanol.angles]
+# θ0 (°), K (K/rad²) — RASPA3 harmonic
 CH3_CH2_O   = [109.47, 50400.0]
 CH2_O_H     = [108.50, 55400.0]
 
-# Torsion: TRAPPE [c0, c1, c2, c3] in K
 [ethanol.torsion]
+# TRAPPE: [c0, c1, c2, c3] in K
 CH3_CH2_O_H = [0.0, 209.82, -29.17, 187.93]
 
+# ── LJ FOR RASPA3 (framework–adsorbate vdW) ─────────────────
 [pair_style]
-cutoff = 12.0
+cutoff      = 12.0
 coul_cutoff = 12.0
-table_file_silica = "hillsauer_silica.table"
-table_file_alumsil = "hillsauer_alumsil.table"
 table_npoints = 2000
-table_rmin = 1.0
-table_rmax = 12.0
+table_rmin    = 1.0
+table_rmax    = 12.0
 
-# Bai LJ for framework (ε/kB in K, σ in Å)
 [pair_style.framework_lj]
-Si = [22.0, 2.30]
-O  = [53.0, 3.30]
+# ε/kB (K), σ (Å) — Bai 2013 (used in RASPA3 for fw-adsorbate LJ)
+Si  = [22.0, 2.30]
+O   = [53.0, 3.30]    # same for Oss, Oas, Ob
+Al  = [22.0, 2.30]    # approximation = same as Si
+Hb  = [0.0,  0.0]     # no LJ
+
+# ── UNIT CONVERSIONS ─────────────────────────────────────────
+[units]
+kB_kcal = 0.0019872041   # kcal/mol/K
+# RASPA → LAMMPS: ε(kcal/mol) = ε(K) × kB
+# RASPA bond K → LAMMPS: K2(kcal/mol/Å²) = K(K/Å²) × kB
+# RASPA angle K → LAMMPS: K2(kcal/mol/rad²) = K(K/rad²) × kB
+
+# ── WORKFLOW ─────────────────────────────────────────────────
+[workflow]
+raspa_exe  = "raspa3"
+lammps_exe = "lmp_mpi"
+adsorbate_component = "ethanol"
+table_file = "hillsauer_nb.table"

@@ -45,6 +45,7 @@ module JZeoMCMD
 	# master GCMC/MD iterative workflow + pressure sweep setup
 	# all simulation files go to a user-chosen directory, NOT inside this package
 	include("workflow.jl")
+	include("setup_pressure_sweep.jl")
 	export WorkflowParams, load_workflow_params, run_gcmc_md_workflow
 	export setup_pressure_sweep, ensure_tables!
 

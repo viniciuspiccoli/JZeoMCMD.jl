@@ -1,8 +1,8 @@
 {
   "SimulationType" : "MonteCarlo",
-  "NumberOfCycles" : 10000,
-  "NumberOfInitializationCycles" : 1000,
-  "NumberOfEquilibrationCycles" : 1000,
+  "NumberOfCycles" : 20000,
+  "NumberOfInitializationCycles" : 5000,
+  "NumberOfEquilibrationCycles" : 5000,
   "PrintEvery" : 1000,
   "Systems" : 
   [
@@ -15,11 +15,11 @@
       "ExternalPressure" : __PRESSURE__,
       "ChargeMethod" : "Ewald",
       "OutputPDBMovie" : true,
-      "SampleMovieEvery" : 1000,
+      "SampleMovieEvery" : 5000,
       "ComputeConventionalRDF" : true,
       "NumberOfBinsConventionalRDF" : 128,
       "RangeConventionalRDF" : 12.0,
-      "WriteConventionalRDFEvery" : 1000,
+      "WriteConventionalRDFEvery" : 5000,
       "WriteLammpsData" : true,
       "ComputeDensityGrid": true,
       "SampleDensityGridEvery": 5000,

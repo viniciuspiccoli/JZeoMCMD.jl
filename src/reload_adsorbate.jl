@@ -22,6 +22,9 @@ Base.@kwdef struct ReloadConfig
     adsorbate_types::Vector{Int} = [3, 4, 5, 6]
     framework_types::Vector{Int} = [1, 2]
 
+    si_type::Int = 1
+    o_type::Int = 2
+
     eth_atoms_per_mol::Int = 4
     eth_atom_names::Vector{String} = ["CH3", "CH2", "O_eth", "H_eth"]
     eth_types::Dict{String,Int} = Dict(
@@ -326,6 +329,7 @@ function reload_adsorbate(prev_data::String, json_restart::String,
     # which includes all class2 coefficients
     println("\n═══ Writing $output (with all coefficients) ═══")
     zcfg = ZeoliteConfig(output_data=output)
+    generate_impropers!(data; si_type=cfg.si_type, o_type=cfg.o_type)
     write_complete_data(output, data, zcfg)
 end
 

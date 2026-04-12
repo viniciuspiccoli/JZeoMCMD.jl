@@ -9,3 +9,48 @@
 
 ### add different Si/Al structure with 2x2x2 supercell and their data file from ovito
 ### need to add aluminossilicate to reload_adsorbate.jl
+
+
+
+┌─────────────────────────────────────────────────┐
+│  Cycle 1 (initial)                              │
+│                                                 │
+│  test.data (Ovito)                              │
+│       ↓  build_loaded_zeolite.jl                │
+│  loaded_zeolite.lmp + run_loaded.in             │
+│       ↓  LAMMPS NPT-MD                         │
+│  loaded_npt_final.lmp                           │
+│       ↓  write_cif.jl                           │
+│  relaxed_MFI.cif                                │
+└────────────────┬────────────────────────────────┘
+                 ↓
+┌─────────────────────────────────────────────────┐
+│  Cycle N (iterative)                            │
+│                                                 │
+│  relaxed_MFI.cif → RASPA3 GCMC → restart.json  │
+│       ↓                              ↓          │
+│       │    reload_adsorbate.jl ←─────┘          │
+│       │    (reads loaded_npt_final.lmp          │
+│       │     + new restart.json)                 │
+│       ↓                                         │
+│  cycleN_loaded.lmp                              │
+│       ↓  LAMMPS NPT-MD (same run_loaded.in)    │
+│  cycleN_npt_final.lmp                           │
+│       ↓  write_cif.jl                           │
+│  cycleN_relaxed.cif → RASPA3 GCMC → ...        │
+└─────────────────────────────────────────────────┘
+
+
+
+
+# what to do:
+
+check: force_field.json
+check charges and lennard jones (check why using lj parameters using Bai.). Why Si for silicate and Si for aluminossilicate are different?
+check params.toml and params_loader.jl
+adjust the write_lammps_data functions in: reload_adsorbate.jl, build_loaded_zeolite.jl, add_zeolite_topology.jl
+check the paramters in generate_nb_tables.jl
+
+
+
+
