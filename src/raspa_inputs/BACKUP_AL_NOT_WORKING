@@ -9,17 +9,7 @@
       "print_as" : "Si",
       "mass" : 28.0855,
       "charge" : 0.5236,
-      "source" : "H-S 1994: Si bonded to 4 Oss, q = 4 × δ(Si-Oss) = 4 × 0.1309"
-    },
-    {
-      "name" : "Si_a",
-      "framework" : true,
-      "print_to_output" : true,
-      "element" : "Si",
-      "print_as" : "Si",
-      "mass" : 28.0855,
-      "charge" : 0.5192,
-      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Oas, q = 3(0.1309) + 0.1265"
+      "source" : "H-S 1994: Si bonded to 4 Oss/Oas, q = 4 × 0.1309"
     },
     {
       "name" : "Si_b",
@@ -28,8 +18,8 @@
       "element" : "Si",
       "print_as" : "Si",
       "mass" : 28.0855,
-      "charge" : 0.5319,
-      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Ob, q = 3(0.1309) + 0.1392"
+      "charge" : 0.5025,
+      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Ob, q = 3(0.1309) + 0.1098"
     },
     {
       "name" : "Al",
@@ -38,8 +28,8 @@
       "element" : "Al",
       "print_as" : "Al",
       "mass" : 26.98154,
-      "charge" : 0.5366,
-      "source" : "H-S 1995: Al bonded to 3 Oas + 1 Ob, q = 3(0.1694) + 0.0284"
+      "charge" : 0.4231,
+      "source" : "H-S 1995: Al bonded to 3 Oas + 1 Ob, q = 3(0.1199) + 0.0634"
     },
     {
       "name" : "Oss",
@@ -58,8 +48,8 @@
       "element" : "O",
       "print_as" : "O",
       "mass" : 15.9994,
-      "charge" : -0.2959,
-      "source" : "H-S 1995 Table 8: O bridging Si-O-Al (no H), q = -(0.1265 + 0.1694)"
+      "charge" : -0.2508,
+      "source" : "H-S 1995: O bridging Si-O-Al (no H), q = -(0.1309 + 0.1199)"
     },
     {
       "name" : "Ob",
@@ -68,8 +58,8 @@
       "element" : "O",
       "print_as" : "O",
       "mass" : 15.9994,
-      "charge" : -0.2515,
-      "source" : "H-S 1995 Table 8: O in Si-O(H)-Al, q = -(0.1392 + 0.0284 + 0.0839)"
+      "charge" : -0.5288,
+      "source" : "H-S 1995: O in Si-O(H)-Al, q = -(0.1098 + 0.0634 + 0.3556)"
     },
     {
       "name" : "O",
@@ -88,19 +78,8 @@
       "element" : "H",
       "print_as" : "H",
       "mass" : 1.008,
-      "charge" : 0.0839,
-      "source" : "H-S 1995 Table 8: Brønsted proton, q = +δ(Hb-Ob) = +0.0839"
-    },
-
-    {
-      "name" : "H_BAS",
-      "framework" : true,
-      "print_to_output" : true,
-      "element" : "H",
-      "print_as" : "H",
-      "mass" : 1.008,
-      "charge" : 0.0839,
-      "source" : "Alias for Hb — used when CIF labels Brønsted H as H_BAS1, H_BAS2... // solely due to my script to create Si/Al structures... the change here is easier."
+      "charge" : 0.3556,
+      "source" : "H-S 1995: Brønsted proton, q = +0.3556"
     },
     {
       "name" : "CH3_eth",
@@ -162,12 +141,6 @@
       "source" : "Bai 2013 (fw-adsorbate vdW)"
     },
     {
-      "name" : "Si_a",
-      "type" : "lennard-jones",
-      "parameters" : [22.0, 2.30],
-      "source" : "Same LJ as Si — only charge differs"
-    },
-    {
       "name" : "Si_b",
       "type" : "lennard-jones",
       "parameters" : [22.0, 2.30],
@@ -177,7 +150,7 @@
       "name" : "Al",
       "type" : "lennard-jones",
       "parameters" : [22.0, 2.30],
-      "source" : "Approximated as Si (Bai has no explicit Al LJ)"
+      "source" : "Approximated as Si (Calero/Bai has no explicit Al-hydrocarbon LJ)"
     },
     {
       "name" : "O",
@@ -208,12 +181,6 @@
       "type" : "lennard-jones",
       "parameters" : [0.0, 0.0],
       "source" : "No LJ on Brønsted proton (Coulomb only)"
-    },
-    {
-      "name" : "H_BAS",
-      "type" : "lennard-jones",
-      "parameters" : [0.0, 0.0],
-      "source" : "Alias for Hb — matches H_BAS label prefix in CIF"
     },
     {
       "name" : "CH3_eth",

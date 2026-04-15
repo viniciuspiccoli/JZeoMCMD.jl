@@ -43,11 +43,16 @@ Base.@kwdef struct ReloadConfig
 end
 
 
+
 #=
+for aluminosilicate
 
 Base.@kwdef struct ReloadConfig
     adsorbate_types::Vector{Int} = [3, 4, 5, 6]
     framework_types::Vector{Int} = [1, 2]
+
+    si_type::Int = 1
+    o_type::Int = 2
 
     eth_atoms_per_mol::Int = 4
     eth_atom_names::Vector{String} = ["CH3", "CH2", "O_eth", "H_eth"]
@@ -66,9 +71,8 @@ Base.@kwdef struct ReloadConfig
     check_xyz::String = "reloaded_ethanol_check.xyz"
 end
 
-
-
 =#
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Step 1: Strip adsorbate from existing data
@@ -149,16 +153,31 @@ end
 function read_raspa3_molecules(json_path::String, box_dims, cfg::ReloadConfig)
     restart = JSON.parsefile(json_path)
 
+   # component_key = ""
+   # for k in keys(restart)
+   #     if restart[k] isa AbstractVector && !isempty(restart[k]) &&
+   #        restart[k][1] isa AbstractVector
+   #         component_key = k; break
+   #     end
+   # end
+   # isempty(component_key) && error("No adsorbate found in JSON")
+   # println("  Component: \"$component_key\"")  
+
+    # NEW:
     component_key = ""
     for k in keys(restart)
-        if restart[k] isa AbstractVector && !isempty(restart[k]) &&
-           restart[k][1] isa AbstractVector
-            component_key = k; break
+        if restart[k] isa AbstractVector
+            component_key = k
+            break
         end
     end
-    isempty(component_key) && error("No adsorbate found in JSON")
+    if isempty(component_key)
+        println("  WARNING: No adsorbate component in JSON")
+        return []
+    end
     println("  Component: \"$component_key\"")
-
+    ##########
+   
     all_pos = restart[component_key]
     apm = cfg.eth_atoms_per_mol
     nmols_total = length(all_pos) ÷ apm

@@ -266,10 +266,16 @@ function step_gcmc!(wp::WorkflowParams, cycle::Int, cif_path::String)
     try
         restart_data = JSON.parsefile(restart_path)
         for (k, v) in restart_data
-            if v isa AbstractVector && !isempty(v) && v[1] isa AbstractVector
-                raspa_out["n_ads"] = Float64(length(v) ÷ wp.atoms_per_mol)
+            #if v isa AbstractVector && !isempty(v) && v[1] isa AbstractVector
+            #    raspa_out["n_ads"] = Float64(length(v) ÷ wp.atoms_per_mol)
+            #    break
+            #end
+
+            if v isa AbstractVector
+                raspa_out["n_ads"] = isempty(v) ? 0.0 : Float64(length(v) ÷ wp.atoms_per_mol)
                 break
             end
+
         end
     catch e
         @warn "Failed to parse restart JSON" exception=e
@@ -292,9 +298,9 @@ function step_build_data!(wp::WorkflowParams, cycle::Int,
     if cycle == 1
         # First cycle: build from Ovito data + RASPA3 ethanol
         println("  [BUILD] Cycle 1: Ovito framework + RASPA3 ethanol...")
-        src = structures_path()
+        # src = structures_path()
         cfg = ZeoliteConfig(
-            ovito_data    = joinpath(src, "MFI_SI.data"),
+            ovito_data    = wp.initial_data,    #joinpath(src, "MFI_SI.data"),
             raspa_restart = restart_json,
             output_data   = data_file,
         )
@@ -324,10 +330,6 @@ end
 #   - Copies run_npt.in + data + table to cycle_NN/lammps/
 #   - Looks for npt_final.data in output
 # ════════════════════════════════════════════════════════════════
-
-
-
-
 
 function step_npt!(wp::WorkflowParams, cycle::Int, data_file::String)
     ldir = joinpath(cycle_dir(wp, cycle), "lammps")

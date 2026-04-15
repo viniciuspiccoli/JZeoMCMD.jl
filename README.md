@@ -51,6 +51,26 @@ check params.toml and params_loader.jl
 adjust the write_lammps_data functions in: reload_adsorbate.jl, build_loaded_zeolite.jl, add_zeolite_topology.jl
 check the paramters in generate_nb_tables.jl
 
+add this: nohup ./your_script.sh > my_output.log 2>&1 &
 
 
 
+
+base_dir/                         ← user provides these:
+├── MFI_SI.data                   ← supercell data (any name)
+├── MFI_SI.cif                    ← unit cell CIF (any name)
+├── hillsauer_nb.table            ← NB table
+├── run_npt.in                    ← LAMMPS input
+└── cycle_01/...                  ← workflow creates these
+
+the package provides (from raspa_inputs/):
+force_field.json                  ← H-S charges + Bai LJ + TraPPE
+ethanol.json                      ← TraPPE-UA molecule definition
+simulation.json.template          ← cycle 1 (2×2×2 unit cells)
+simulation.json.template_next     ← cycle 2+ (1×1×1 supercell)
+
+
+wp = WorkflowParams(...)
+wp.initial_cif  = "MFI_SI.cif"      # ← in base_dir
+wp.initial_data = "MFI_SI.data"      # ← in base_dir
+run_gcmc_md_workflow(wp)

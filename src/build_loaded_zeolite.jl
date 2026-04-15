@@ -179,18 +179,43 @@ function read_raspa3_ethanol(cfg::ZeoliteConfig, box_dims)
     restart = JSON.parsefile(cfg.raspa_restart)
 
     # Find adsorbate key
+    #component_key = ""
+    #for k in keys(restart)
+    #    if restart[k] isa AbstractVector && !isempty(restart[k]) &&
+    #       restart[k][1] isa AbstractVector
+    #        component_key = k
+    #        break
+    #    end
+    #end
+    #isempty(component_key) && error("No adsorbate positions found in JSON")
+    #println("  Component: \"$component_key\"")
+    #all_positions = restart[component_key]
+
+  
+
+    # find adsorbate key new method - this is done to avoid crash in cases where there is no 
+    # adsornate. Also, this is to allow me to track bugs and errors in the simulations
+    # that might comes from bad ff parameters, mistakes in the input files, etc.
+
+    # NEW:
     component_key = ""
     for k in keys(restart)
-        if restart[k] isa AbstractVector && !isempty(restart[k]) &&
-           restart[k][1] isa AbstractVector
+        if restart[k] isa AbstractVector
             component_key = k
             break
         end
     end
-    isempty(component_key) && error("No adsorbate positions found in JSON")
+    if isempty(component_key)
+        println("  WARNING: No adsorbate component in JSON")
+        return []
+    end
     println("  Component: \"$component_key\"")
-
     all_positions = restart[component_key]
+    if isempty(all_positions)
+        println("  WARNING: 0 molecules — GCMC produced empty loading")
+        return []
+    end
+
     npos = length(all_positions)
     apm = cfg.eth_atoms_per_mol   # atoms per molecule
 
