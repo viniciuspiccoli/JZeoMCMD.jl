@@ -458,11 +458,15 @@ function step_write_cif!(wp::WorkflowParams, cycle::Int, data_file::String)
         fw_types = ALUMSIL_FW_TYPES
         type_elem = ALUMSIL_TYPE_ELEMENTS
     else
+        #fw_types = [1, 2]
+        #p = TOML.parsefile(wp.params_toml)
+        #fw = get(p, "silica", get(p, "framework", Dict()))
+        #al = get(fw, "Al_type", 0)
+        #al > 0 && push!(fw_types, al)
         fw_types = [1, 2]
-        p = TOML.parsefile(wp.params_toml)
-        fw = get(p, "silica", get(p, "framework", Dict()))
-        al = get(fw, "Al_type", 0)
-        al > 0 && push!(fw_types, al)
+        type_elem = Dict(1=>"Si", 2=>"O")
+
+
     end
     #p = TOML.parsefile(wp.params_toml)
     #al = get(p["framework"], "Al_type", 0)
