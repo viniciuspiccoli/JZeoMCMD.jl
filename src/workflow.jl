@@ -76,6 +76,11 @@ Base.@kwdef mutable struct WorkflowParams
     atoms_per_mol::Int = 4         # ethanol = CH3 + CH2 + O + H
     n_unit_cells::Int = 8          # 2×2×2
     nfw_atoms::Int = 2304          # MFI 2×2×2
+
+    # ── Aluminosilicate support ──
+    is_alumino::Bool = false       # true → use 8-type convention + .ff includes
+    ff_include::String = ""        # e.g. "hillsauer_alumsil_loaded.ff" (copied to lammps dir)
+
 end
 
 """
@@ -295,24 +300,55 @@ function step_build_data!(wp::WorkflowParams, cycle::Int,
     cdir = cycle_dir(wp, cycle)
     data_file = joinpath(cdir, "loaded.lmp")
 
-    if cycle == 1
-        # First cycle: build from Ovito data + RASPA3 ethanol
-        println("  [BUILD] Cycle 1: Ovito framework + RASPA3 ethanol...")
-        # src = structures_path()
-        cfg = ZeoliteConfig(
-            ovito_data    = wp.initial_data,    #joinpath(src, "MFI_SI.data"),
-            raspa_restart = restart_json,
-            output_data   = data_file,
-        )
-        fw = read_and_remap_framework(cfg)
-        add_framework_topology!(fw, cfg)
-        mols = read_raspa3_ethanol(cfg, fw.box_dimensions)
-        merge_framework_ethanol!(fw, mols, cfg)
-        write_complete_data(data_file, fw, cfg)
+
+    if wp.is_alumino
+        # ── Aluminosilicate path ──
+        if cycle == 1
+            println("  [BUILD] Cycle 1: Alumino framework + RASPA3 ethanol...")
+            data = read_lammps_data(wp.initial_data; verbose=false)
+            build_alumino_topology!(data; verbose=true)
+
+            # Read ethanol
+            acfg = AluminoConfig(raspa_restart=restart_json)
+            mols = read_raspa3_ethanol(acfg, data.box_dimensions)
+            merge_framework_ethanol!(data, mols, acfg)
+            write_lammps_data(data_file, data;
+                comment="H-ZSM-5 + ethanol (build_alumino_topology)")
+        else
+            println("  [BUILD] Cycle $cycle: reload adsorbate (alumino)...")
+            rcfg = ReloadConfig(
+                adsorbate_types = [9,10,11,12],
+                framework_types = [1,2,3,4,5,6,7,8],
+                si_type = 6, o_type = 3,
+                eth_types   = Dict("CH3"=>9,"CH2"=>10,"O_eth"=>11,"H_eth"=>12),
+                eth_charges = Dict("CH3"=>0.0,"CH2"=>0.265,"O_eth"=>-0.700,"H_eth"=>0.435),
+                eth_masses  = Dict("CH3"=>15.035,"CH2"=>14.027,"O_eth"=>15.999,"H_eth"=>1.008),
+                eth_bond_defs     = [(7,1,2),(8,2,3),(9,3,4)],
+                eth_angle_defs    = [(11,1,2,3),(12,2,3,4)],
+                eth_dihedral_defs = [(11,1,2,3,4)],
+            )
+            reload_adsorbate(prev_data, restart_json, data_file; cfg=rcfg)
+        end
     else
-        # Subsequent cycles: reload adsorbate into previous NPT output
-        println("  [BUILD] Cycle $cycle: reload adsorbate into NPT framework...")
-        reload_adsorbate(prev_data, restart_json, data_file)
+        if cycle == 1
+            # First cycle: build from Ovito data + RASPA3 ethanol
+            println("  [BUILD] Cycle 1: Ovito framework + RASPA3 ethanol...")
+            # src = structures_path()
+            cfg = ZeoliteConfig(
+                ovito_data    = wp.initial_data,    #joinpath(src, "MFI_SI.data"),
+                raspa_restart = restart_json,
+                output_data   = data_file,
+            )
+            fw = read_and_remap_framework(cfg)
+            add_framework_topology!(fw, cfg)
+            mols = read_raspa3_ethanol(cfg, fw.box_dimensions)
+            merge_framework_ethanol!(fw, mols, cfg)
+            write_complete_data(data_file, fw, cfg)
+        else
+            # Subsequent cycles: reload adsorbate into previous NPT output
+            println("  [BUILD] Cycle $cycle: reload adsorbate into NPT framework...")
+            reload_adsorbate(prev_data, restart_json, data_file)
+        end
     end
 
     # Verify
@@ -342,6 +378,13 @@ function step_npt!(wp::WorkflowParams, cycle::Int, data_file::String)
     # Copy table
     table_src = joinpath(wp.base_dir, wp.table_file)
     cp(table_src, joinpath(ldir, wp.table_file); force=true)
+
+    # Copy .ff include file (aluminosilicate)
+    if wp.is_alumino && !isempty(wp.ff_include)
+        ff_src = joinpath(wp.base_dir, wp.ff_include)
+        isfile(ff_src) && cp(ff_src, joinpath(ldir, basename(wp.ff_include)); force=true)
+    end
+
 
     # Copy LAMMPS input script
     input_src = wp.lammps_input
@@ -411,19 +454,27 @@ function step_write_cif!(wp::WorkflowParams, cycle::Int, data_file::String)
 
     data = read_lammps_data(data_file; verbose=false)
 
-    fw_types = [1, 2]
-    p = TOML.parsefile(wp.params_toml)
-    fw = get(p, "silica", get(p, "framework", Dict()))
-    al = get(fw, "Al_type", 0)
-    
+    if wp.is_alumino 
+        fw_types = ALUMSIL_FW_TYPES
+        type_elem = ALUMSIL_TYPE_ELEMENTS
+    else
+        fw_types = [1, 2]
+        p = TOML.parsefile(wp.params_toml)
+        fw = get(p, "silica", get(p, "framework", Dict()))
+        al = get(fw, "Al_type", 0)
+        al > 0 && push!(fw_types, al)
+    end
     #p = TOML.parsefile(wp.params_toml)
     #al = get(p["framework"], "Al_type", 0)
 
-    al > 0 && push!(fw_types, al)
+    #write_cif(cif_out, data;
+    #          framework_types=fw_types,
+    #          type_elements=Dict(1=>"Si", 2=>"O", 3=>"Al"),
+    #          comment=@sprintf("cycle %d P=%.1e Pa", cycle, wp.pressure))
 
-    write_cif(cif_out, data;
+     write_cif(cif_out, data;
               framework_types=fw_types,
-              type_elements=Dict(1=>"Si", 2=>"O", 3=>"Al"),
+              type_elements=type_elem,
               comment=@sprintf("cycle %d P=%.1e Pa", cycle, wp.pressure))
 
     return cif_out
@@ -438,10 +489,17 @@ function step_analyze!(wp::WorkflowParams, cycle::Int,
                         ref_cell::NamedTuple, data_file::String)
     strain = compute_strain(cell, ref_cell)
 
+    #data = read_lammps_data(data_file; verbose=false)
+    #occ = analyze_channel_occupancy(
+    #    data.coords, data.atom_labels,
+    #    Set([3, 4, 5, 6]),   # adsorbate types (silica)
+    #    data.box_dimensions)
+
     data = read_lammps_data(data_file; verbose=false)
+    ads_types = wp.is_alumino ? Set([9, 10, 11, 12]) : Set([3, 4, 5, 6])
     occ = analyze_channel_occupancy(
         data.coords, data.atom_labels,
-        Set([3, 4, 5, 6]),   # adsorbate types (silica)
+        ads_types,
         data.box_dimensions)
 
     n_ads = get(raspa_out, "n_ads", NaN)

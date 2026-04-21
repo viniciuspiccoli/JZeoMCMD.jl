@@ -48,9 +48,9 @@ Usage standalone:
 Usage from module:
     include("read_lammps_data.jl")
     include("add_zeolite_topology.jl")
-    data = LammpsDataReader.read_lammps_data("test.data")
+    data = read_lammps_data("test.data")
     add_zeolite_topology!(data; si_type=2, o_type=1, al_type=3, h_type=4)
-    LammpsDataReader.write_lammps_data("output.data", data)
+    write_lammps_data("output.data", data)
 """
 
 
@@ -98,13 +98,25 @@ function _bond_type(t_atom_type, si_type, al_type)
     error("Unknown T-atom type: $t_atom_type")
 end
 
+#function _angle_type_TOT(t1_type, t2_type, si_type, al_type)
+#    a, b = minmax(t1_type, t2_type)
+#    a == si_type && b == si_type && return 1   # Si-O-Si
+#    a == si_type && b == al_type && return 3   # Si-O-Al
+#    a == al_type && b == al_type && return 3   # Al-O-Al (rare, grouped with Si-O-Al)
+#    error("Unknown T-O-T: $t1_type, $t2_type")
+#end
+
+
 function _angle_type_TOT(t1_type, t2_type, si_type, al_type)
     a, b = minmax(t1_type, t2_type)
     a == si_type && b == si_type && return 1   # Si-O-Si
-    a == si_type && b == al_type && return 3   # Si-O-Al
-    a == al_type && b == al_type && return 3   # Al-O-Al (rare, grouped with Si-O-Al)
+    # After minmax: a ≤ b.  Since al_type(1) < si_type(6),
+    # the mixed case always gives a=al_type, b=si_type.
+    a == al_type && b == si_type && return 3   # Al-O-Si
+    # a == al_type && b == al_type && return 3   # Al-O-Al (rare, grouped with Si-O-Al) 
     error("Unknown T-O-T: $t1_type, $t2_type")
 end
+
 
 function _angle_type_OTO(center_type, si_type, al_type)
     center_type == si_type && return 2   # O-Si-O

@@ -74,3 +74,25 @@ wp = WorkflowParams(...)
 wp.initial_cif  = "MFI_SI.cif"      # ← in base_dir
 wp.initial_data = "MFI_SI.data"      # ← in base_dir
 run_gcmc_md_workflow(wp)
+
+
+remove json files from the inside also!!!!
+
+
+src/
+├── JZeoMCMD.jl                    ← updated (new includes + exports)
+├── read_lammps_data.jl            ← unchanged
+├── add_zeolite_topology.jl        ← fixed minmax bug
+├── refine_topology_types.jl       ← NEW
+├── alumino_support.jl             ← NEW (replaces old version)
+├── build_loaded_zeolite.jl        ← updated (configurable eth topology defs)
+├── reload_adsorbate.jl            ← updated (silica/alumino dispatch)
+├── workflow.jl                    ← updated (is_alumino flag)
+├── write_cif.jl                   ← unchanged
+├── analysis.jl                    ← unchanged
+├── params_loader.jl               ← unchanged
+├── generate_nb_tables.jl          ← unchanged
+├── setup_pressure_sweep.jl        ← unchanged
+└── ff/
+    ├── hillsauer_alumsil_empty.ff   ← NEW
+    └── hillsauer_alumsil_loaded.ff  ← NEW

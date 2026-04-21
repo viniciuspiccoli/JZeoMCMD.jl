@@ -1,0 +1,263 @@
+# ============================================================
+# hillsauer_alumsil_empty.ff
+# Self-contained Hill-Sauer force field for H-ZSM-5 (empty)
+#
+# Usage:  include hillsauer_alumsil_empty.ff
+#
+# Must appear AFTER: read_data, bond_style class2, angle_style class2,
+#                    dihedral_style class2, improper_style class2
+#
+# Sources:
+#   Hill & Sauer, J. Phys. Chem. 1994, 98, 1238  (silica)
+#   Hill & Sauer, J. Phys. Chem. 1995, 99, 9536  (aluminosilicates)
+#   Boulfelfel et al., J. Phys. Chem. C 2016, 120, 14140 (mHSFF: θ₀=150°)
+#
+# Atom types (from corrected.data / OVITO):
+#   1=Al  2=Hb  3=O(=Oss)  4=Oas  5=Ob  6=Si  7=Si_a  8=Si_b
+#
+# Bond types:       1=Si*-Oss  2=Si_b-Ob  3=Si_a-Oas  4=Al-Ob  5=Al-Oas  6=Ob-Hb
+# Angle types:      1=Oss-Si*-Oss  2=Si*-Oss-Si*  3=Si_b-Ob-Al  4=Si_b-Ob-Hb
+#                   5=Al-Ob-Hb  6=Al-Oas-Si_a  7=Oas-Al-Ob  8=Oas-Al-Oas
+#                   9=Oss-Si_b-Ob  10=Oas-Si_a-Oss
+# Dihedral types:   1=Oss-Si*-Oss-Si*  2=Oas-Si_a-Oss-Si*  3=Oss-Si_a-Oas-Al
+#                   4=Ob-Si_b-Oss-Si*  5=Oss-Si_b-Ob-Al  6=Oss-Si_b-Ob-Hb
+#                   7=Oas-Al-Oas-Si_a  8=Oas-Al-Ob-Si_b  9=Oas-Al-Ob-Hb
+#                   10=Ob-Al-Oas-Si_a
+# Improper types:   1=Si_b-Ob-Hb-Al
+# ============================================================
+
+# ────────────────────────────────────────────────────────────
+# MASSES
+# ────────────────────────────────────────────────────────────
+mass  1  26.981538  # Al
+mass  2   1.00794   # Hb
+mass  3  15.9994    # O (Oss)
+mass  4  15.9994    # Oas
+mass  5  15.9994    # Ob
+mass  6  28.0855    # Si
+mass  7  28.0855    # Si_a
+mass  8  28.0855    # Si_b
+
+# ────────────────────────────────────────────────────────────
+# CHARGES — Hill-Sauer 1995 bond increments (Eq. 11)
+# ────────────────────────────────────────────────────────────
+set type  1 charge  0.5366    # Al   = 3×δ(Al-Oas) + δ(Al-Ob) = 3(0.1694)+0.0284
+set type  2 charge  0.0839    # Hb   = δ(Hb-Ob)
+set type  3 charge -0.2618    # Oss  = 2×δ(O-Si) = 2(-0.1309)
+set type  4 charge -0.2959    # Oas  = δ(O-Si_a) + δ(O-Al) = -0.1265-0.1694
+set type  5 charge -0.2515    # Ob   = δ(O-Si_b) + δ(O-Al) + δ(O-Hb) = -0.1392-0.0284-0.0839
+set type  6 charge  0.5236    # Si   = 4×δ(Si-Oss) = 4(0.1309)
+set type  7 charge  0.5192    # Si_a = 3×δ(Si-Oss) + δ(Si-Oas) = 3(0.1309)+0.1265
+set type  8 charge  0.5319    # Si_b = 3×δ(Si-Oss) + δ(Si-Ob) = 3(0.1309)+0.1392
+
+# ────────────────────────────────────────────────────────────
+# PAIR STYLE — A/r^9 (tabulated) + Coulomb (Ewald)
+# ────────────────────────────────────────────────────────────
+pair_style      hybrid/overlay table spline 2000 coul/long 12.0
+pair_modify     tail no shift no
+kspace_style    ewald 1.0E-06
+
+pair_coeff      * * coul/long
+
+# fw-fw tabulated A/r^9 (Hill-Sauer nonbonded)
+pair_coeff  1  1 table hillsauer_alumsil_nb.table Al_Al
+pair_coeff  1  2 table hillsauer_alumsil_nb.table Al_Hb
+pair_coeff  1  3 table hillsauer_alumsil_nb.table Al_O
+pair_coeff  1  4 table hillsauer_alumsil_nb.table Al_Oas
+pair_coeff  1  5 table hillsauer_alumsil_nb.table Al_Ob
+pair_coeff  1  6 table hillsauer_alumsil_nb.table Al_Si
+pair_coeff  1  7 table hillsauer_alumsil_nb.table Al_Si_a
+pair_coeff  1  8 table hillsauer_alumsil_nb.table Al_Si_b
+pair_coeff  2  2 table hillsauer_alumsil_nb.table Hb_Hb
+pair_coeff  2  3 table hillsauer_alumsil_nb.table Hb_O
+pair_coeff  2  4 table hillsauer_alumsil_nb.table Hb_Oas
+pair_coeff  2  5 table hillsauer_alumsil_nb.table Hb_Ob
+pair_coeff  2  6 table hillsauer_alumsil_nb.table Hb_Si
+pair_coeff  2  7 table hillsauer_alumsil_nb.table Hb_Si_a
+pair_coeff  2  8 table hillsauer_alumsil_nb.table Hb_Si_b
+pair_coeff  3  3 table hillsauer_alumsil_nb.table O_O
+pair_coeff  3  4 table hillsauer_alumsil_nb.table O_Oas
+pair_coeff  3  5 table hillsauer_alumsil_nb.table O_Ob
+pair_coeff  3  6 table hillsauer_alumsil_nb.table O_Si
+pair_coeff  3  7 table hillsauer_alumsil_nb.table O_Si_a
+pair_coeff  3  8 table hillsauer_alumsil_nb.table O_Si_b
+pair_coeff  4  4 table hillsauer_alumsil_nb.table Oas_Oas
+pair_coeff  4  5 table hillsauer_alumsil_nb.table Oas_Ob
+pair_coeff  4  6 table hillsauer_alumsil_nb.table Oas_Si
+pair_coeff  4  7 table hillsauer_alumsil_nb.table Oas_Si_a
+pair_coeff  4  8 table hillsauer_alumsil_nb.table Oas_Si_b
+pair_coeff  5  5 table hillsauer_alumsil_nb.table Ob_Ob
+pair_coeff  5  6 table hillsauer_alumsil_nb.table Ob_Si
+pair_coeff  5  7 table hillsauer_alumsil_nb.table Ob_Si_a
+pair_coeff  5  8 table hillsauer_alumsil_nb.table Ob_Si_b
+pair_coeff  6  6 table hillsauer_alumsil_nb.table Si_Si
+pair_coeff  6  7 table hillsauer_alumsil_nb.table Si_Si_a
+pair_coeff  6  8 table hillsauer_alumsil_nb.table Si_Si_b
+pair_coeff  7  7 table hillsauer_alumsil_nb.table Si_a_Si_a
+pair_coeff  7  8 table hillsauer_alumsil_nb.table Si_a_Si_b
+pair_coeff  8  8 table hillsauer_alumsil_nb.table Si_b_Si_b
+
+# ────────────────────────────────────────────────────────────
+# BOND COEFFICIENTS — class2 quartic
+# E = K2(b-b0)^2 + K3(b-b0)^3 + K4(b-b0)^4
+# ────────────────────────────────────────────────────────────
+bond_coeff  1  1.6104  459.0786  -672.4445   443.3651   # Si*-Oss
+bond_coeff  2  1.6581  370.5744  -569.4988  3102.2502   # Si_b-Ob
+bond_coeff  3  1.6157  494.1042   -36.7016  2150.6836   # Si_a-Oas
+bond_coeff  4  1.9698   86.8129    26.3933   758.4299   # Al-Ob
+bond_coeff  5  1.7193  328.6850  -341.0143  2189.0349   # Al-Oas
+bond_coeff  6  0.9540  656.8465 -1627.4874  3684.1929   # Ob-Hb
+
+# ────────────────────────────────────────────────────────────
+# ANGLE COEFFICIENTS — class2 quartic + cross terms
+# E = H2(θ-θ0)^2 + H3(θ-θ0)^3 + H4(θ-θ0)^4
+#   + bb: K_bb (b1-b1_0)(b2-b2_0)
+#   + ba: K_ba1(b1-b1_0)(θ-θ0) + K_ba2(b2-b2_0)(θ-θ0)
+# ────────────────────────────────────────────────────────────
+# --- 1: Oss-Si*-Oss (O-T-O) θ₀=112.02° ---
+angle_coeff  1  112.0200   81.9691  -36.5814   116.9558
+angle_coeff  1  bb    78.1239  1.6104  1.6104
+angle_coeff  1  ba    78.1239   78.1239  1.6104  1.6104
+
+# --- 2: Si*-Oss-Si* (T-O-T, mHSFF) θ₀=150° ---
+angle_coeff  2  150.0000   20.7015   27.5506    10.9930
+angle_coeff  2  bb   151.8742  1.6104  1.6104
+angle_coeff  2  ba     9.2390    9.2390  1.6104  1.6104
+
+# --- 3: Si_b-Ob-Al θ₀=136.66° ---
+angle_coeff  3  136.6645  195.2950   48.8575   185.3481
+angle_coeff  3  bb   130.8388  1.6581  1.9698
+angle_coeff  3  ba    23.0450    3.6805  1.6581  1.9698
+
+# --- 4: Si_b-Ob-Hb θ₀=119.28° ---
+angle_coeff  4  119.2823   43.0215  -15.2099    13.1396
+angle_coeff  4  bb    18.0332  1.6581  0.9540
+angle_coeff  4  ba    36.5384   53.8615  1.6581  0.9540
+
+# --- 5: Al-Ob-Hb θ₀=107.12° ---
+angle_coeff  5  107.1200   43.9725  -53.4364   103.3838
+angle_coeff  5  bb   -18.4463  1.9698  0.9540
+angle_coeff  5  ba   -12.7238   33.9457  1.9698  0.9540
+
+# --- 6: Al-Oas-Si_a θ₀=162.40° ---
+angle_coeff  6  162.4000   10.3454   12.6366     9.0038
+angle_coeff  6  bb    83.1658  1.7193  1.6157
+angle_coeff  6  ba     9.1662   13.7478  1.7193  1.6157
+
+# --- 7: Oas-Al-Ob θ₀=81.50° ---
+angle_coeff  7   81.4988   43.2829 -113.7790   202.1476
+angle_coeff  7  bb    84.3372  1.9698  1.7193
+angle_coeff  7  ba    12.9574   20.0579  1.9698  1.7193
+
+# --- 8: Oas-Al-Oas θ₀=113.40° ---
+angle_coeff  8  113.4000  300.0520  -32.5659    67.2591
+angle_coeff  8  bb   -56.5050  1.7193  1.7193
+angle_coeff  8  ba   110.1523  110.1523  1.7193  1.7193
+
+# --- 9: Oss-Si_b-Ob θ₀=107.61° ---
+angle_coeff  9  107.6066   99.6715  -33.1512    10.7204
+angle_coeff  9  bb    63.3273  1.6104  1.6581
+angle_coeff  9  ba    52.7776   12.2769  1.6104  1.6581
+
+# --- 10: Oas-Si_a-Oss θ₀=112.43° ---
+angle_coeff 10  112.4279   88.0709  -57.0430    92.4803
+angle_coeff 10  bb    45.7520  1.6157  1.6104
+angle_coeff 10  ba    20.1222   77.9618  1.6157  1.6104
+
+# ────────────────────────────────────────────────────────────
+# DIHEDRAL COEFFICIENTS — class2
+# E = V1[1-cos(φ-φ1)] + V2[1-cos(2φ-φ2)] + V3[1-cos(3φ-φ3)]
+#   + cross terms: mbt, ebt, at, aat, bb13
+# ────────────────────────────────────────────────────────────
+# --- 1: Oss-Si*-Oss-Si* (bulk) ---
+dihedral_coeff  1   0.0306 0.0  -0.0105 0.0   0.0804 0.0
+dihedral_coeff  1  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  1  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.6104
+dihedral_coeff  1  at     0.0  0.0  0.0  0.0  0.0  0.0  112.0200  150.0
+dihedral_coeff  1  aat   -4.5150  112.0200  150.0
+dihedral_coeff  1  bb13   0.0  1.6104  1.6104
+
+# --- 2: Oas-Si_a-Oss-Si* ---
+dihedral_coeff  2   0.0397 0.0   0.0133 0.0  -0.2453 0.0
+dihedral_coeff  2  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  2  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6157  1.6104
+dihedral_coeff  2  at     0.0  0.0  0.0  0.0  0.0  0.0  112.4279  150.0
+dihedral_coeff  2  aat    0.0  112.4279  150.0
+dihedral_coeff  2  bb13   0.0  1.6157  1.6104
+
+# --- 3: Oss-Si_a-Oas-Al ---
+dihedral_coeff  3   2.1989 0.0   0.7528 0.0  -0.4936 0.0
+dihedral_coeff  3  mbt    0.0  0.0  0.0  1.6157
+dihedral_coeff  3  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.7193
+dihedral_coeff  3  at     0.0  0.0  0.0  0.0  0.0  0.0  112.4279  162.4000
+dihedral_coeff  3  aat    0.0  112.4279  162.4000
+dihedral_coeff  3  bb13   0.0  1.6104  1.7193
+
+# --- 4: Ob-Si_b-Oss-Si* ---
+dihedral_coeff  4   0.5350 0.0  -0.4717 0.0  -0.0036 0.0
+dihedral_coeff  4  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  4  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6581  1.6104
+dihedral_coeff  4  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  150.0
+dihedral_coeff  4  aat    0.0  107.6066  150.0
+dihedral_coeff  4  bb13   0.0  1.6581  1.6104
+
+# --- 5: Oss-Si_b-Ob-Al ---
+dihedral_coeff  5   0.1641 0.0   1.7914 0.0   0.1970 0.0
+dihedral_coeff  5  mbt    0.0  0.0  0.0  1.6581
+dihedral_coeff  5  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.9698
+dihedral_coeff  5  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  136.6645
+dihedral_coeff  5  aat    0.0  107.6066  136.6645
+dihedral_coeff  5  bb13   0.0  1.6104  1.9698
+
+# --- 6: Oss-Si_b-Ob-Hb ---
+dihedral_coeff  6   3.7091 0.0  -0.6560 0.0   0.0856 0.0
+dihedral_coeff  6  mbt    0.0  0.0  0.0  1.6581
+dihedral_coeff  6  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  0.9540
+dihedral_coeff  6  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  119.2823
+dihedral_coeff  6  aat    0.0  107.6066  119.2823
+dihedral_coeff  6  bb13   0.0  1.6104  0.9540
+
+# --- 7: Oas-Al-Oas-Si_a ---
+dihedral_coeff  7   6.0838 0.0  -0.5702 0.0  -1.4818 0.0
+dihedral_coeff  7  mbt    0.0  0.0  0.0  1.7193
+dihedral_coeff  7  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  1.6157
+dihedral_coeff  7  at     0.0  0.0  0.0  0.0  0.0  0.0  113.4000  162.4000
+dihedral_coeff  7  aat    0.0  113.4000  162.4000
+dihedral_coeff  7  bb13   0.0  1.7193  1.6157
+
+# --- 8: Oas-Al-Ob-Si_b ---
+dihedral_coeff  8  -4.1073 0.0   3.5859 0.0   0.2635 0.0
+dihedral_coeff  8  mbt    0.0  0.0  0.0  1.9698
+dihedral_coeff  8  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  1.6581
+dihedral_coeff  8  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  136.6645
+dihedral_coeff  8  aat    0.0  81.4988  136.6645
+dihedral_coeff  8  bb13   0.0  1.7193  1.6581
+
+# --- 9: Oas-Al-Ob-Hb ---
+dihedral_coeff  9  -3.6990 0.0  -3.0937 0.0   0.8520 0.0
+dihedral_coeff  9  mbt    0.0  0.0  0.0  1.9698
+dihedral_coeff  9  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  0.9540
+dihedral_coeff  9  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  107.1200
+dihedral_coeff  9  aat    0.0  81.4988  107.1200
+dihedral_coeff  9  bb13   0.0  1.7193  0.9540
+
+# --- 10: Ob-Al-Oas-Si_a ---
+dihedral_coeff 10   2.1752 0.0  -0.9201 0.0   1.1534 0.0
+dihedral_coeff 10  mbt    0.0  0.0  0.0  1.7193
+dihedral_coeff 10  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.9698  1.6157
+dihedral_coeff 10  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  162.4000
+dihedral_coeff 10  aat    0.0  81.4988  162.4000
+dihedral_coeff 10  bb13   0.0  1.9698  1.6157
+
+# ────────────────────────────────────────────────────────────
+# IMPROPER COEFFICIENT — bridging hydroxyl planarity
+# ────────────────────────────────────────────────────────────
+improper_coeff  1   0.8407  0.0                            # Si_b-Ob-Hb-Al
+improper_coeff  1  aa  0.0  0.0  0.0  0.0  0.0  0.0       # no aa cross term
+
+# ────────────────────────────────────────────────────────────
+# SPECIAL BONDS & NEIGHBORS
+# ────────────────────────────────────────────────────────────
+special_bonds   lj 0.0 0.0 1.0 coul 0.0 0.0 1.0 angle yes dihedral yes
+neighbor        2.0 bin
+neigh_modify    every 5 delay 0 check yes one 5000 page 150000

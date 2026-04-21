@@ -1,0 +1,69 @@
+# ============================================================
+# Hill-Sauer Force Field for All-Silica Zeolites
+# ============================================================
+# Include this file AFTER read_data in your LAMMPS input:
+#   read_data  zsm5_222.lmp
+#   include    hillsauer_silica.ff
+#
+# Data file must have:
+#   2 atom types  (1=Si, 2=O)
+#   1 bond type   (Si-O)
+#   2 angle types (1=O-Si-O, 2=Si-O-Si)
+#   1 dihedral type (O-Si-O-Si)
+#
+# References:
+#   Hill & Sauer, J. Phys. Chem. 1994, 98, 1238 (HSFF)
+#   Hill & Sauer, J. Phys. Chem. 1995, 99, 9536 (charges)
+#   Boulfelfel et al., J. Phys. Chem. C 2016, 120, 43 (mHSFF)
+#   A_ij repulsion: Bai et al., J. Phys. Chem. C 2012, 116, 26
+# ============================================================
+
+# --- Charges (Hill-Sauer bond increments, H&S 1994 Table 2) ---
+# δ(Si-O) = +0.1309 → Si: 4×0.1309 = +0.5236, O: 2×(-0.1309) = -0.2618
+set type 1 charge  0.5236     # Si
+set type 2 charge -0.2618     # O
+
+# --- Pair style ---
+# lj96/cut with σ=0 → E=0 for framework-framework (bonded+Coulomb only)
+# ε values store A_ij for documentation; σ=0 zeroes the potential
+pair_style      hybrid/overlay lj96/cut 12.0 coul/long 12.0
+pair_modify     tail no shift no
+kspace_style    ewald 1.0E-06
+
+pair_coeff      * * coul/long
+pair_coeff      1 1 lj96/cut 186910.958224 0.0   # Si-Si: A=186910.96 kcal/mol·Å⁹
+pair_coeff      1 2 lj96/cut 103590.638188 0.0   # Si-O:  A=103590.64
+pair_coeff      2 2 lj96/cut  57412.472881 0.0   # O-O:   A=57412.47
+
+# --- Bond style ---
+bond_style      class2
+# Si-O: r0=1.6104 Å, K2=459.08, K3=-672.44, K4=443.37 (H&S94 Table 2)
+bond_coeff      1   1.6104  459.0786  -672.4445  443.3651
+
+# --- Angle style ---
+angle_style     class2
+
+# O-Si-O: θ0=113.0°, K2=81.97, K3=-36.58, K4=116.96 (H&S94 Table 2)
+angle_coeff     1   113.0   81.9691  -36.5814  116.9558
+angle_coeff     1   bb      0.0       1.6104    1.6104
+angle_coeff     1   ba      78.1239   78.1239   1.6104  1.6104
+
+# Si-O-Si: θ0=150.0° (mHSFF, Boulfelfel 2016; original HSFF=173.77°)
+# Change θ0 below for your zeolite: 150.0 (8-ring), 140.59 (12-ring)
+angle_coeff     2   150.0   20.7015   27.5506   10.9930
+angle_coeff     2   bb      151.8742  1.6104    1.6104
+angle_coeff     2   ba      9.2390    9.2390    1.6104  1.6104
+
+# --- Dihedral style ---
+dihedral_style  class2
+
+# O-Si-O-Si (H&S94 Table 2)
+dihedral_coeff  1   0.0306 0.0  -0.0105 0.0  0.0804 0.0
+dihedral_coeff  1   mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  1   ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.6104
+dihedral_coeff  1   at     0.0  0.0  0.0  0.0  0.0  0.0  113.0  150.0
+dihedral_coeff  1   aat   -4.5150  113.0  150.0
+dihedral_coeff  1   bb13   0.0  1.6104  1.6104
+
+# --- Special bonds ---
+special_bonds   lj 0.0 0.0 1.0 coul 0.0 0.0 1.0 angle yes dihedral yes

@@ -73,6 +73,14 @@ Base.@kwdef mutable struct ZeoliteConfig
     eth_masses::Dict{String,Float64} = Dict(
         "CH3"=>15.035, "CH2"=>14.027, "O_eth"=>15.999, "H_eth"=>1.008)
 
+    # ── Ethanol bonded topology definitions ── 
+    # (bond_type, atom1_in_mol, atom2_in_mol)
+    eth_bond_defs::Vector{Tuple{Int,Int,Int}} = [(2,1,2),(3,2,3),(4,3,4)]
+    # (angle_type, a1, a2, a3)
+    eth_angle_defs::Vector{Tuple{Int,Int,Int,Int}} = [(3,1,2,3),(4,2,3,4)]
+    # (dihedral_type, a1, a2, a3, a4)
+    eth_dihedral_defs::Vector{Tuple{Int,Int,Int,Int,Int}} = [(2,1,2,3,4)]
+
     # ── Pair style ──
     pair_cutoff::Float64 = 12.0
     coul_cutoff::Float64 = 12.0
@@ -352,36 +360,57 @@ function merge_framework_ethanol!(fw, molecules, cfg::ZeoliteConfig)
     fw.image_flags     = new_img
 
     # ── Ethanol bonds: CH3-CH2(2), CH2-O(3), O-H(4) ──
-    eth_bdefs = [(2,1,2), (3,2,3), (4,3,4)]
+    eth_bdefs =  cfg.eth_bond_defs   # [(2,1,2), (3,2,3), (4,3,4)]
     nfb = size(fw.bonds, 1)
-    neb = nmols * 3
+    neb = nmols * length(eth_bdefs)    #3
     nb  = zeros(Int, nfb+neb, 2);  nb[1:nfb,:] = fw.bonds
     nbl = zeros(Int, nfb+neb);     nbl[1:nfb] = fw.bond_labels
     for mi in 1:nmols
         base = nfw + (mi-1)*neth_per
         for (bi,(bt,a1,a2)) in enumerate(eth_bdefs)
-            i = nfb + (mi-1)*3 + bi
+            i = nfb + (mi-1)*length(eth_bdefs) + bi               #3 + bi
             nbl[i] = bt; nb[i,1] = base+a1; nb[i,2] = base+a2
         end
     end
-    fw.bonds = nb; fw.bond_labels = nbl; fw.nbond_types = max(fw.nbond_types, 4)
+    fw.bonds = nb; fw.bond_labels = nbl
+    fw.nbond_types = max(fw.nbond_types, maximum(bt for (bt,_,_) in eth_bdefs)) #; fw.nbond_types = max(fw.nbond_types, 4)
 
     # ── Ethanol angles: CH3-CH2-O(3), CH2-O-H(4) ──
-    eth_adefs = [(3,1,2,3), (4,2,3,4)]
+    eth_adefs =  cfg.eth_angle_defs        # [(3,1,2,3), (4,2,3,4)]
     nfa = size(fw.angles, 1)
-    nea = nmols * 2
+    nea = nmols *  length(eth_adefs)    # 2
     na  = zeros(Int, nfa+nea, 3); na[1:nfa,:] = fw.angles
     nal = zeros(Int, nfa+nea);    nal[1:nfa] = fw.angle_labels
     for mi in 1:nmols
         base = nfw + (mi-1)*neth_per
         for (ai,(at,a1,a2,a3)) in enumerate(eth_adefs)
-            i = nfa + (mi-1)*2 + ai
+            i = nfa + (mi-1)*length(eth_adefs) + ai     #2 + ai
             nal[i] = at; na[i,:] = [base+a1, base+a2, base+a3]
         end
     end
-    fw.angles = na; fw.angle_labels = nal; fw.nangle_types = max(fw.nangle_types, 4)
+    #fw.angles = na; fw.angle_labels = nal; fw.nangle_types = max(fw.nangle_types, 4)
+    fw.angles = na; fw.angle_labels = nal
+    fw.nangle_types = max(fw.nangle_types, maximum(at for (at,_,_,_) in eth_adefs))
+
 
     # ── Ethanol dihedrals: CH3-CH2-O-H (type 2) ──
+    eth_ddefs = cfg.eth_dihedral_defs
+    nfd = size(fw.dihedrals, 1)
+    ned = nmols * length(eth_ddefs)
+    nd  = zeros(Int, nfd+ned, 4); nd[1:nfd,:] = fw.dihedrals
+    ndl = zeros(Int, nfd+ned);    ndl[1:nfd] = fw.dihedral_labels
+    for mi in 1:nmols
+        base = nfw + (mi-1)*neth_per
+        for (di,(dt,a1,a2,a3,a4)) in enumerate(eth_ddefs)
+            i = nfd + (mi-1)*length(eth_ddefs) + di
+            ndl[i] = dt; nd[i,:] = [base+a1, base+a2, base+a3, base+a4]
+        end
+    end
+    fw.dihedrals = nd; fw.dihedral_labels = ndl
+    fw.ndihedral_types = max(fw.ndihedral_types, maximum(dt for (dt,_,_,_,_) in eth_ddefs))
+
+    
+    #=
     nfd = size(fw.dihedrals, 1)
     ned = nmols
     nd  = zeros(Int, nfd+ned, 4); nd[1:nfd,:] = fw.dihedrals
@@ -392,6 +421,7 @@ function merge_framework_ethanol!(fw, molecules, cfg::ZeoliteConfig)
         ndl[i] = 2; nd[i,:] = [base+1, base+2, base+3, base+4]
     end
     fw.dihedrals = nd; fw.dihedral_labels = ndl; fw.ndihedral_types = max(fw.ndihedral_types, 2)
+    =#
 
     # Update masses
     for (name, t) in cfg.eth_types; fw.masses[t] = cfg.eth_masses[name]; end

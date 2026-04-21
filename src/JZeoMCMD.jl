@@ -13,6 +13,27 @@ module JZeoMCMD
 	include("add_zeolite_topology.jl")
 	export add_zeolite_topology! 
 
+
+######################################################################################
+
+
+	# refine bond/angle/dihedral types for aluminosilicate Hill-Sauer FF
+	# Must be called AFTER add_zeolite_topology! and AFTER restoring atom labels
+	include("refine_topology_types.jl")
+	export refine_topology_types!
+
+	# aluminosilicate H-ZSM-5 support functions (8-type convention)
+	# Provides: AluminoConfig, build_alumino_topology!, assign_alumino_charges!,
+	#           alumino_workflow_params, AluminoReloadConfig, write_alumino_cif
+	include("alumino_support.jl")
+	export AluminoConfig, build_alumino_topology!, assign_alumino_charges!
+	export alumino_workflow_params, AluminoReloadConfig, write_alumino_cif
+	export ALUMSIL_FW_TYPES, ALUMSIL_ADS_TYPES, ALUMSIL_CHARGES
+	export ALUMSIL_NFW_ATOMS_2x2x2, ALUMSIL_TYPE_ELEMENTS
+
+######################################################################################
+
+
 	# function to build lammps data file for a zeolite loaded with adsorbate
 	include("build_loaded_zeolite.jl")
 	export ZeoliteConfig
@@ -48,6 +69,9 @@ module JZeoMCMD
 	include("setup_pressure_sweep.jl")
 	export WorkflowParams, load_workflow_params, run_gcmc_md_workflow
 	export setup_pressure_sweep, ensure_tables!
+
+
+
 
 	# ── Package resource paths ──────────────────────────────────
 	# Use these to find default files shipped with the package:

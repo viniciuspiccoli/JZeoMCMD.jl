@@ -1,1 +1,0 @@
-The julia script in this dir must be run to create the tables.

@@ -346,10 +346,24 @@ function reload_adsorbate(prev_data::String, json_restart::String,
 
     # Write using write_complete_data from build_loaded_zeolite.jl
     # which includes all class2 coefficients
+    #println("\n═══ Writing $output (with all coefficients) ═══")
+    #zcfg = ZeoliteConfig(output_data=output)
+    #generate_impropers!(data; si_type=cfg.si_type, o_type=cfg.o_type)
+    #write_complete_data(output, data, zcfg)
+
     println("\n═══ Writing $output (with all coefficients) ═══")
-    zcfg = ZeoliteConfig(output_data=output)
-    generate_impropers!(data; si_type=cfg.si_type, o_type=cfg.o_type)
-    write_complete_data(output, data, zcfg)
+    if length(cfg.framework_types) <= 2
+        # Silica path: generate Si impropers + embed class2 coefficients
+        zcfg = ZeoliteConfig(output_data=output)
+        generate_impropers!(data; si_type=cfg.si_type, o_type=cfg.o_type)
+        write_complete_data(output, data, zcfg)
+    else
+        # Aluminosilicate path: framework impropers preserved from cycle 1,
+        # coefficients come from .ff include file
+        write_lammps_data(output, data;
+        comment="Reloaded alumino framework + ethanol (reload_adsorbate.jl)")
+    end
+
 end
 
 # ═══════════════════════════════════════════════════════════════════
