@@ -388,14 +388,8 @@ function step_npt!(wp::WorkflowParams, cycle::Int, data_file::String)
 
     # Copy .ff include file (if set)
     if !isempty(wp.ff_include)
-        ff_src = isabs(wp.ff_include) ? wp.ff_include : joinpath(wp.base_dir, wp.ff_include)
-        ff_dst = joinpath(ldir, basename(wp.ff_include))
-        if isfile(ff_src)
-            cp(ff_src, ff_dst; force=true)
-            println("  [NPT] Copied $(basename(wp.ff_include)) → lammps/")
-        else
-            error("FF include file not found: $ff_src")
-        end
+	ff_src = joinpath(wp.base_dir, wp.ff_include)
+        isfile(ff_src) && cp(ff_src, joinpath(ldir, basename(wp.ff_include)); force=true)
     end
 
 
