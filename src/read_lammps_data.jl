@@ -490,7 +490,9 @@ end
 
 Replicate the unit cell `nx × ny × nz` times.  All atom IDs,
 topology indices, and molecule labels are correctly remapped.
-Works for both orthogonal and triclinic cells.
+Works for both orthogonal and triclinic cells. 
+    
+    THIS FUNCTION SHOULD NOT BE USEDDDDD!!!!!!!!!!!!!!!!!!!!!!1 THERE IS NO POINT TRYING TO DO THIS THING WHEN I CAN USE OVITO!!!!
 """
 function make_supercell(data::LammpsData, nx::Int, ny::Int, nz::Int)
     cell = box_to_matrix(data)
@@ -743,7 +745,7 @@ Write a LAMMPS data file respecting the stored atom style,
 triclinic tilt factors, and image flags.
 """
 function write_lammps_data(filename::AbstractString, data::LammpsData;
-                           comment::String="LAMMPS data via LammpsDataReader.jl")
+                           comment::String="LAMMPS data from read_lammps_data.jl")
     natoms     = size(data.coords, 1)
     nbonds     = size(data.bonds, 1)
     nangles    = size(data.angles, 1)
@@ -757,16 +759,26 @@ function write_lammps_data(filename::AbstractString, data::LammpsData;
     open(filename, "w") do io
         println(io, comment, "\n")
         println(io, "$natoms atoms")
-        nbonds > 0     && println(io, "$nbonds bonds")
-        nangles > 0    && println(io, "$nangles angles")
-        ndihedrals > 0 && println(io, "$ndihedrals dihedrals")
-        nimpropers > 0 && println(io, "$nimpropers impropers")
+        #nbonds > 0     && println(io, "$nbonds bonds")
+        #nangles > 0    && println(io, "$nangles angles")
+        #ndihedrals > 0 && println(io, "$ndihedrals dihedrals")
+        #nimpropers > 0 && println(io, "$nimpropers impropers")
+
+        (nbonds > 0 || data.nbond_types > 0)         && println(io, "$nbonds bonds")
+        (nangles > 0 || data.nangle_types > 0)        && println(io, "$nangles angles")
+        (ndihedrals > 0 || data.ndihedral_types > 0)  && println(io, "$ndihedrals dihedrals")
+        (nimpropers > 0 || data.nimproper_types > 0)   && println(io, "$nimpropers impropers")
+
         println(io)
         println(io, "$natom_types atom types")
         data.nbond_types > 0     && println(io, "$(data.nbond_types) bond types")
         data.nangle_types > 0    && println(io, "$(data.nangle_types) angle types")
         data.ndihedral_types > 0 && println(io, "$(data.ndihedral_types) dihedral types")
         data.nimproper_types > 0 && println(io, "$(data.nimproper_types) improper types")
+
+
+
+
         println(io)
         @printf(io, "%.10f %.10f xlo xhi\n", data.box_dimensions[1,1], data.box_dimensions[1,2])
         @printf(io, "%.10f %.10f ylo yhi\n", data.box_dimensions[2,1], data.box_dimensions[2,2])
