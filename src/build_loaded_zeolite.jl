@@ -322,7 +322,15 @@ end
 function merge_framework_ethanol!(fw, molecules, cfg::ZeoliteConfig)
     println("\n═══ Step 4: Merging framework + ethanol ═══")
     nmols = length(molecules)
-    nmols == 0 && (println("  No ethanol."); return fw)
+    # nmols == 0 && (println("  No ethanol."); return fw)
+
+    # NEW (register masses before returning):
+    if  nmols == 0
+        println("  No ethanol (0 molecules).")
+        for (name, t) in cfg.eth_types; fw.masses[t] = cfg.eth_masses[name]; end
+        return fw
+    end
+
 
     nfw = size(fw.coords, 1)
     neth_per = cfg.eth_atoms_per_mol

@@ -226,7 +226,12 @@ end
 
 function append_adsorbate!(data, molecules, cfg::ReloadConfig)
     nmols = length(molecules)
-    nmols == 0 && (println("  No molecules."); return data)
+   # nmols == 0 && (println("  No molecules."); return data)
+    if nmols == 0
+        println("  No molecules.")
+        for (name, t) in cfg.eth_types; data.masses[t] = cfg.eth_masses[name]; end
+        return data
+    end
 
     nfw = size(data.coords, 1)
     apm = cfg.eth_atoms_per_mol
