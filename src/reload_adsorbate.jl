@@ -225,12 +225,23 @@ end
 # ═══════════════════════════════════════════════════════════════════
 
 function append_adsorbate!(data, molecules, cfg::ReloadConfig)
+   # Always register adsorbate types (same fix as merge_framework_ethanol!)
+    for (name, t) in cfg.eth_types
+        data.masses[t] = cfg.eth_masses[name]
+    end
+    data.nbond_types = max(data.nbond_types, maximum(bt for (bt,_,_) in cfg.eth_bond_defs))
+    data.nangle_types = max(data.nangle_types, maximum(at for (at,_,_,_) in cfg.eth_angle_defs))
+    data.ndihedral_types = max(data.ndihedral_types, maximum(dt for (dt,_,_,_,_) in cfg.eth_dihedral_defs))
+
     nmols = length(molecules)
    # nmols == 0 && (println("  No molecules."); return data)
     if nmols == 0
         println("  No molecules.")
         for (name, t) in cfg.eth_types; data.masses[t] = cfg.eth_masses[name]; end
-        return data
+    	data.nbond_types     = max(data.nbond_types,     maximum(bt for (bt,_,_) in cfg.eth_bond_defs))
+        data.nangle_types    = max(data.nangle_types,    maximum(at for (at,_,_,_) in cfg.eth_angle_defs))
+        data.ndihedral_types = max(data.ndihedral_types, maximum(dt for (dt,_,_,_,_) in cfg.eth_dihedral_defs))
+	return data
     end
 
     nfw = size(data.coords, 1)

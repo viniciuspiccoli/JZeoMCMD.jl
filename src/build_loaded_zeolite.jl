@@ -328,7 +328,10 @@ function merge_framework_ethanol!(fw, molecules, cfg::ZeoliteConfig)
     if  nmols == 0
         println("  No ethanol (0 molecules).")
         for (name, t) in cfg.eth_types; fw.masses[t] = cfg.eth_masses[name]; end
-        return fw
+        fw.nbond_types     = max(fw.nbond_types,     maximum(bt for (bt,_,_) in cfg.eth_bond_defs))
+        fw.nangle_types    = max(fw.nangle_types,    maximum(at for (at,_,_,_) in cfg.eth_angle_defs))
+        fw.ndihedral_types = max(fw.ndihedral_types, maximum(dt for (dt,_,_,_,_) in cfg.eth_dihedral_defs))
+	return fw
     end
 
 
