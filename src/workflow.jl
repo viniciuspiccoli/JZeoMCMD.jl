@@ -344,6 +344,7 @@ function step_build_data!(wp::WorkflowParams, cycle::Int,
             mols = read_raspa3_ethanol(cfg, fw.box_dimensions)
             merge_framework_ethanol!(fw, mols, cfg)
             #write_complete_data(data_file, fw, cfg)
+            generate_impropers!(fw; si_type=cfg.si_type, o_type=cfg.o_type)
             write_lammps_data(data_file, fw; comment="H-ZSM-5 + ethanol (alumino cycle 1)")
         else
             # Subsequent cycles: reload adsorbate into previous NPT output
