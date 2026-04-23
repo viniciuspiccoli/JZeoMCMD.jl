@@ -1,6 +1,6 @@
 name = "JZeoMCMD"
 uuid = "dda498f4-63a1-4c73-8712-d21d6703256b"
-version = "1.0.0-DEV"
+version = "1.0.1-DEV"
 authors = ["viniciuspiccoli <viniciuspiccoli2008@hotmail.com> and contributors"]
 
 [deps]

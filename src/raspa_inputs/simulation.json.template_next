@@ -21,7 +21,7 @@
       "WriteConventionalRDFEvery" : 5000,
       "WriteLammpsData" : true,
       "ComputeDensityGrid": true,
-      "SampleDensityGridEvery": 5000,
+      "SampleDensityGridEvery": 100,
       "WriteDensityGridEvery": 5000,
       "DensityGridBinning" : "Equitable",
       "DensityGridSize": [128, 128, 128],
