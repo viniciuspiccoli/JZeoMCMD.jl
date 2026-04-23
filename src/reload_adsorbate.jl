@@ -143,7 +143,20 @@ function strip_adsorbate(data, cfg::ReloadConfig)
         data.dihedrals = nd
     end
 
+    # Filter + remap impropers
+    if size(data.impropers, 1) > 0
+        keep = [all(haskey(id_map, data.impropers[k,c]) for c in 1:4)
+            for k in 1:size(data.impropers,1)]
+        ki = findall(keep)
+        data.improper_labels = data.improper_labels[ki]
+        ni = data.impropers[ki, :]
+        for k in 1:size(ni,1), c in 1:4
+            ni[k,c] = id_map[ni[k,c]]
+        end
+        data.impropers = ni
+    end
     return data, n_removed
+
 end
 
 # ═══════════════════════════════════════════════════════════════════
