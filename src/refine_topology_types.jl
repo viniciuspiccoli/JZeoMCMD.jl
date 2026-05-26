@@ -61,8 +61,10 @@ const _T_TYPES  = Set([1, 6, 7, 8])    # Al + all Si
 function _ref_bond(t1::Int, t2::Int)
     a, b = minmax(t1, t2)
     a == _OSS && b in _SI_TYPES && return 1   # Si*-Oss
-    a == _OB  && b == 8         && return 2   # Si_b-Ob
-    a == _OAS && b == 7         && return 3   # Si_a-Oas
+    a == _OB  && b in _SI_TYPES && return 2   # Si*-Ob (normally Si_b, also Si_a at shared Al sites)
+    a == _OAS && b in _SI_TYPES && return 3   # Si*-Oas (normally Si_a, also Si_b at shared Al sites)
+#    a == _OB  && b == 8         && return 2   # Si_b-Ob
+#    a == _OAS && b == 7         && return 3   # Si_a-Oas
     a == _AL  && b == _OB       && return 4   # Al-Ob
     a == _AL  && b == _OAS      && return 5   # Al-Oas
     a == _HB  && b == _OB       && return 6   # Ob-Hb
