@@ -63,6 +63,13 @@ module JZeoMCMD
 	include("reload_adsorbate.jl")
 	export reload_adsorbate
 
+
+
+   # external scientific input-file specification
+	# validation and staging are implemented separately from this data model
+	include("external_inputs.jl")
+	export ExternalInputFiles, raspa_simulation_for_cycle
+
 	# master GCMC/MD iterative workflow + pressure sweep setup
 	# all simulation files go to a user-chosen directory, NOT inside this package
 	include("workflow.jl")

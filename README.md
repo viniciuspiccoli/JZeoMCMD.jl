@@ -12,6 +12,23 @@
 
 
 
+Add baseline unit tests. (OK)
+Add ExternalInputFiles. (OK)
+Add validate_inputs. ( )
+Add generic file staging. ( )
+Add a new workflow overload using external files. ( )
+Run it with the current silicalite-1 inputs. ( )
+Run it with the current Si/Al = 19 inputs. ( )
+Move ethanol and MFI metadata out of the generic layer. ( )
+Replace restart parsing. ( )
+Introduce time-series and block statistics. ( )
+Replace convergence criteria. ( )
+Deprecate internal scientific input directories. ( )
+
+
+
+
+
 ┌─────────────────────────────────────────────────┐
 │  Cycle 1 (initial)                              │
 │                                                 │
