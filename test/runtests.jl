@@ -1,6 +1,10 @@
+## script to running initial tests of the package
+
 using JZeoMCMD
 using Test
+using LinearAlgebra
 
-@testset "JZeoMCMD.jl" begin
-    # Write your tests here.
-end
+include("helpers.jl")
+include("test_lammps_io.jl")
+include("test_analysis.jl")
+include("test_cif.jl")

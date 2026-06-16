@@ -1,9 +1,9 @@
 {
   "SimulationType" : "MonteCarlo",
-  "NumberOfCycles" : 50000,
-  "NumberOfInitializationCycles" : 5000,
-  "NumberOfEquilibrationCycles" : 5000,
-  "PrintEvery" : 1000,
+  "NumberOfCycles" : 100000,
+  "NumberOfInitializationCycles" : 10000,
+  "NumberOfEquilibrationCycles" : 10000,
+  "PrintEvery" : 2000,
   "Systems" : 
   [
     {
@@ -35,7 +35,7 @@
     {
       "Name" : "ethanol",
       "MoleculeDefinition" : "Local",
-      "FugacityCoefficient" : 0,
+      "FugacityCoefficient" : 1.0,
       "TranslationProbability" : 0.5,
       "RotationProbability" : 0.5,
       "ReinsertionProbability" : 0.5,

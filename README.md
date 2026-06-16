@@ -18,7 +18,7 @@
 │  test.data (Ovito)                              │
 │       ↓  build_loaded_zeolite.jl                │
 │  loaded_zeolite.lmp + run_loaded.in             │
-│       ↓  LAMMPS NPT-MD                         │
+│       ↓  LAMMPS NPT-MD                          │
 │  loaded_npt_final.lmp                           │
 │       ↓  write_cif.jl                           │
 │  relaxed_MFI.cif                                │
@@ -27,17 +27,17 @@
 ┌─────────────────────────────────────────────────┐
 │  Cycle N (iterative)                            │
 │                                                 │
-│  relaxed_MFI.cif → RASPA3 GCMC → restart.json  │
+│  relaxed_MFI.cif → RASPA3 GCMC → restart.json   │
 │       ↓                              ↓          │
 │       │    reload_adsorbate.jl ←─────┘          │
 │       │    (reads loaded_npt_final.lmp          │
 │       │     + new restart.json)                 │
 │       ↓                                         │
 │  cycleN_loaded.lmp                              │
-│       ↓  LAMMPS NPT-MD (same run_loaded.in)    │
+│       ↓  LAMMPS NPT-MD (same run_loaded.in)     │
 │  cycleN_npt_final.lmp                           │
 │       ↓  write_cif.jl                           │
-│  cycleN_relaxed.cif → RASPA3 GCMC → ...        │
+│  cycleN_relaxed.cif → RASPA3 GCMC → ...         │
 └─────────────────────────────────────────────────┘
 
 
