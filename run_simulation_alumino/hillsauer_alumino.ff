@@ -1,0 +1,318 @@
+# ============================================================
+# hillsauer_alumsil_loaded.ff
+# Hill-Sauer (framework) + TraPPE-UA (ethanol) for loaded H-ZSM-5
+#
+# Usage:  include hillsauer_alumsil_loaded.ff
+#
+# Atom types:
+#   1=Al  2=Hb  3=O(Oss)  4=Oas  5=Ob  6=Si  7=Si_a  8=Si_b
+#   9=CH3_eth  10=CH2_eth  11=O_eth  12=H_eth
+#
+# Framework:   Hill-Sauer 1994/1995, mHSFF (Boulfelfel 2016)
+# Ethanol:     TraPPE-UA (Siepmann et al.)
+# Cross:       Bai et al. 2013 LJ + Lorentz-Berthelot mixing
+# Charges:     H-S bond increments (fw) + TraPPE partial charges (eth)
+#
+# Bond/angle/dihedral types 1-6/1-10/1-10 = framework (same as _empty.ff)
+# Additional ethanol bonded types:
+#   bond    7 = CH3-CH2     8 = CH2-O_eth    9 = O_eth-H_eth
+#   angle  11 = CH3-CH2-O   12 = CH2-O-H
+#   dihedral 11 = CH3-CH2-O-H  (OPLS)
+# ============================================================
+
+# ────────────────────────────────────────────────────────────
+# MASSES
+# ────────────────────────────────────────────────────────────
+mass   1  26.981538  # Al
+mass   2   1.00794   # Hb
+mass   3  15.9994    # O (Oss)
+mass   4  15.9994    # Oas
+mass   5  15.9994    # Ob
+mass   6  28.0855    # Si
+mass   7  28.0855    # Si_a
+mass   8  28.0855    # Si_b
+mass   9  15.035     # CH3 (TraPPE-UA)
+mass  10  14.027     # CH2 (TraPPE-UA)
+mass  11  15.9994    # O_eth
+mass  12   1.008     # H_eth
+
+# ────────────────────────────────────────────────────────────
+# CHARGES
+# ────────────────────────────────────────────────────────────
+# Framework (H-S bond increments)
+set type   1 charge  0.5366    # Al
+set type   2 charge  0.0839    # Hb
+set type   3 charge -0.2618    # Oss
+set type   4 charge -0.2959    # Oas
+set type   5 charge -0.2515    # Ob
+set type   6 charge  0.5236    # Si
+set type   7 charge  0.5192    # Si_a
+set type   8 charge  0.5319    # Si_b
+# Ethanol (TraPPE-UA)
+set type   9 charge  0.000     # CH3
+set type  10 charge  0.265     # CH2
+set type  11 charge -0.700     # O_eth
+set type  12 charge  0.435     # H_eth
+
+# ────────────────────────────────────────────────────────────
+# PAIR STYLE — table (fw-fw) + LJ (fw-eth, eth-eth) + Coulomb
+# ────────────────────────────────────────────────────────────
+pair_style      hybrid/overlay table spline 2000 lj/cut 12.0 coul/long 12.0
+pair_modify     tail no shift no
+kspace_style    ewald 1.0E-06
+
+pair_coeff      * * coul/long
+
+# ── fw-fw: tabulated A/r^9 (same 36 pairs as _empty.ff) ──
+pair_coeff  1  1 table hillsauer_alumino.table Al_Al
+pair_coeff  1  2 table hillsauer_alumino.table Al_Hb
+pair_coeff  1  3 table hillsauer_alumino.table Al_O
+pair_coeff  1  4 table hillsauer_alumino.table Al_Oas
+pair_coeff  1  5 table hillsauer_alumino.table Al_Ob
+pair_coeff  1  6 table hillsauer_alumino.table Al_Si
+pair_coeff  1  7 table hillsauer_alumino.table Al_Si_a
+pair_coeff  1  8 table hillsauer_alumino.table Al_Si_b
+pair_coeff  2  2 table hillsauer_alumino.table Hb_Hb
+pair_coeff  2  3 table hillsauer_alumino.table Hb_O
+pair_coeff  2  4 table hillsauer_alumino.table Hb_Oas
+pair_coeff  2  5 table hillsauer_alumino.table Hb_Ob
+pair_coeff  2  6 table hillsauer_alumino.table Hb_Si
+pair_coeff  2  7 table hillsauer_alumino.table Hb_Si_a
+pair_coeff  2  8 table hillsauer_alumino.table Hb_Si_b
+pair_coeff  3  3 table hillsauer_alumino.table O_O
+pair_coeff  3  4 table hillsauer_alumino.table O_Oas
+pair_coeff  3  5 table hillsauer_alumino.table O_Ob
+pair_coeff  3  6 table hillsauer_alumino.table O_Si
+pair_coeff  3  7 table hillsauer_alumino.table O_Si_a
+pair_coeff  3  8 table hillsauer_alumino.table O_Si_b
+pair_coeff  4  4 table hillsauer_alumino.table Oas_Oas
+pair_coeff  4  5 table hillsauer_alumino.table Oas_Ob
+pair_coeff  4  6 table hillsauer_alumino.table Oas_Si
+pair_coeff  4  7 table hillsauer_alumino.table Oas_Si_a
+pair_coeff  4  8 table hillsauer_alumino.table Oas_Si_b
+pair_coeff  5  5 table hillsauer_alumino.table Ob_Ob
+pair_coeff  5  6 table hillsauer_alumino.table Ob_Si
+pair_coeff  5  7 table hillsauer_alumino.table Ob_Si_a
+pair_coeff  5  8 table hillsauer_alumino.table Ob_Si_b
+pair_coeff  6  6 table hillsauer_alumino.table Si_Si
+pair_coeff  6  7 table hillsauer_alumino.table Si_Si_a
+pair_coeff  6  8 table hillsauer_alumino.table Si_Si_b
+pair_coeff  7  7 table hillsauer_alumino.table Si_a_Si_a
+pair_coeff  7  8 table hillsauer_alumino.table Si_a_Si_b
+pair_coeff  8  8 table hillsauer_alumino.table Si_b_Si_b
+
+# ── eth-eth: TraPPE-UA LJ ──
+pair_coeff   9   9 lj/cut  0.19476  3.750    # CH3 (ε=98K×kB)
+pair_coeff  10  10 lj/cut  0.09128  3.950    # CH2 (ε=46K×kB)
+pair_coeff  11  11 lj/cut  0.18509  3.020    # O_eth (ε=93.0K×kB)  (TraPPE)
+pair_coeff  12  12 lj/cut  0.00000  0.000    # H_eth (no LJ)
+
+# ── fw-eth cross: Bai 2013 LJ (Lorentz-Berthelot) ──
+# Bai framework LJ:  O_fw: ε=0.1855 σ=2.806  Si: ε=0.0413 σ=1.564
+# All O types (3,4,5) use same Bai O params; Si types (6,7,8) use same Si params
+# Al treated as Si (approximate); Hb treated as zero LJ
+
+# O_fw(3,4,5) × CH3(9):  ε=√(0.1855×0.19476)=0.19008  σ=(2.806+3.750)/2=3.278
+pair_coeff   3   9 lj/cut  0.19008  3.278
+pair_coeff   4   9 lj/cut  0.19008  3.278
+pair_coeff   5   9 lj/cut  0.19008  3.278
+# O_fw(3,4,5) × CH2(10): ε=√(0.1855×0.09128)=0.13009  σ=(2.806+3.950)/2=3.378
+pair_coeff   3  10 lj/cut  0.13009  3.378
+pair_coeff   4  10 lj/cut  0.13009  3.378
+pair_coeff   5  10 lj/cut  0.13009  3.378
+# O_fw(3,4,5) × O_eth(11): ε=√(0.1855×0.18509)=0.18530  σ=(2.806+3.020)/2=2.913
+pair_coeff   3  11 lj/cut  0.18530  2.913
+pair_coeff   4  11 lj/cut  0.18530  2.913
+pair_coeff   5  11 lj/cut  0.18530  2.913
+# O_fw(3,4,5) × H_eth(12): zero
+pair_coeff   3  12 lj/cut  0.00000  1.000
+pair_coeff   4  12 lj/cut  0.00000  1.000
+pair_coeff   5  12 lj/cut  0.00000  1.000
+
+# Si(6,7,8) × CH3(9): ε=√(0.0413×0.19476)=0.08970  σ=(1.564+3.750)/2=2.657
+pair_coeff   6   9 lj/cut  0.08970  2.657
+pair_coeff   7   9 lj/cut  0.08970  2.657
+pair_coeff   8   9 lj/cut  0.08970  2.657
+# Si(6,7,8) × CH2(10): ε=√(0.0413×0.09128)=0.06140  σ=(1.564+3.950)/2=2.757
+pair_coeff   6  10 lj/cut  0.06140  2.757
+pair_coeff   7  10 lj/cut  0.06140  2.757
+pair_coeff   8  10 lj/cut  0.06140  2.757
+# Si(6,7,8) × O_eth(11): ε=√(0.0413×0.18509)=0.08742  σ=(1.564+3.020)/2=2.292
+pair_coeff   6  11 lj/cut  0.08742  2.292
+pair_coeff   7  11 lj/cut  0.08742  2.292
+pair_coeff   8  11 lj/cut  0.08742  2.292
+# Si(6,7,8) × H_eth(12): zero
+pair_coeff   6  12 lj/cut  0.00000  1.000
+pair_coeff   7  12 lj/cut  0.00000  1.000
+pair_coeff   8  12 lj/cut  0.00000  1.000
+
+# Al(1) × eth: treat as Si (Bai)
+pair_coeff   1   9 lj/cut  0.08970  2.657
+pair_coeff   1  10 lj/cut  0.06140  2.757
+pair_coeff   1  11 lj/cut  0.08742  2.292
+pair_coeff   1  12 lj/cut  0.00000  1.000
+# Hb(2) × eth: small H, approximate as zero
+pair_coeff   2   9 lj/cut  0.00000  1.000
+pair_coeff   2  10 lj/cut  0.00000  1.000
+pair_coeff   2  11 lj/cut  0.00000  1.000
+pair_coeff   2  12 lj/cut  0.00000  1.000
+
+# eth-eth cross (LB mixing auto-generated, but explicit here)
+pair_coeff   9  10 lj/cut  0.13334  3.850    # CH3-CH2
+pair_coeff   9  11 lj/cut  0.18990  3.385    # CH3-O_eth
+pair_coeff   9  12 lj/cut  0.00000  1.000    # CH3-H_eth
+pair_coeff  10  11 lj/cut  0.12994  3.485    # CH2-O_eth
+pair_coeff  10  12 lj/cut  0.00000  1.000    # CH2-H_eth
+pair_coeff  11  12 lj/cut  0.00000  1.000    # O_eth-H_eth
+
+# ────────────────────────────────────────────────────────────
+# FRAMEWORK BOND COEFFICIENTS (same as _empty.ff)
+# ────────────────────────────────────────────────────────────
+bond_coeff  1  1.6104  459.0786  -672.4445   443.3651   # Si*-Oss
+bond_coeff  2  1.6581  370.5744  -569.4988  3102.2502   # Si_b-Ob
+bond_coeff  3  1.6157  494.1042   -36.7016  2150.6836   # Si_a-Oas
+bond_coeff  4  1.9698   86.8129    26.3933   758.4299   # Al-Ob
+bond_coeff  5  1.7193  328.6850  -341.0143  2189.0349   # Al-Oas
+bond_coeff  6  0.9540  656.8465 -1627.4874  3684.1929   # Ob-Hb
+
+# ETHANOL BOND COEFFICIENTS (harmonic, class2 K3=K4=0)
+bond_coeff  7  1.540   268.0  0.0  0.0    # CH3-CH2
+bond_coeff  8  1.430   320.0  0.0  0.0    # CH2-O_eth
+bond_coeff  9  0.945   553.0  0.0  0.0    # O_eth-H_eth
+
+# ────────────────────────────────────────────────────────────
+# FRAMEWORK ANGLE COEFFICIENTS (same as _empty.ff)
+# ────────────────────────────────────────────────────────────
+angle_coeff  1  112.0200   81.9691  -36.5814   116.9558   # Oss-Si*-Oss
+angle_coeff  1  bb    78.1239  1.6104  1.6104
+angle_coeff  1  ba    78.1239   78.1239  1.6104  1.6104
+angle_coeff  2  150.0000   20.7015   27.5506    10.9930   # Si*-Oss-Si*
+angle_coeff  2  bb   151.8742  1.6104  1.6104
+angle_coeff  2  ba     9.2390    9.2390  1.6104  1.6104
+angle_coeff  3  136.6645  195.2950   48.8575   185.3481   # Si_b-Ob-Al
+angle_coeff  3  bb   130.8388  1.6581  1.9698
+angle_coeff  3  ba    23.0450    3.6805  1.6581  1.9698
+angle_coeff  4  119.2823   43.0215  -15.2099    13.1396   # Si_b-Ob-Hb
+angle_coeff  4  bb    18.0332  1.6581  0.9540
+angle_coeff  4  ba    36.5384   53.8615  1.6581  0.9540
+angle_coeff  5  107.1200   43.9725  -53.4364   103.3838   # Al-Ob-Hb
+angle_coeff  5  bb   -18.4463  1.9698  0.9540
+angle_coeff  5  ba   -12.7238   33.9457  1.9698  0.9540
+angle_coeff  6  162.4000   10.3454   12.6366     9.0038   # Al-Oas-Si_a
+angle_coeff  6  bb    83.1658  1.7193  1.6157
+angle_coeff  6  ba     9.1662   13.7478  1.7193  1.6157
+angle_coeff  7   81.4988   43.2829 -113.7790   202.1476   # Oas-Al-Ob
+angle_coeff  7  bb    84.3372  1.9698  1.7193
+angle_coeff  7  ba    12.9574   20.0579  1.9698  1.7193
+angle_coeff  8  113.4000  300.0520  -32.5659    67.2591   # Oas-Al-Oas
+angle_coeff  8  bb   -56.5050  1.7193  1.7193
+angle_coeff  8  ba   110.1523  110.1523  1.7193  1.7193
+angle_coeff  9  107.6066   99.6715  -33.1512    10.7204   # Oss-Si_b-Ob
+angle_coeff  9  bb    63.3273  1.6104  1.6581
+angle_coeff  9  ba    52.7776   12.2769  1.6104  1.6581
+angle_coeff 10  112.4279   88.0709  -57.0430    92.4803   # Oas-Si_a-Oss
+angle_coeff 10  bb    45.7520  1.6157  1.6104
+angle_coeff 10  ba    20.1222   77.9618  1.6157  1.6104
+
+# ETHANOL ANGLE COEFFICIENTS (harmonic, class2 H3=H4=0)
+angle_coeff 11  109.47  50.0  0.0  0.0      # CH3-CH2-O_eth
+angle_coeff 11  bb    0.0  1.540  1.430
+angle_coeff 11  ba    0.0  0.0  1.540  1.430
+angle_coeff 12  108.50  55.0  0.0  0.0      # CH2-O_eth-H_eth
+angle_coeff 12  bb    0.0  1.430  0.945
+angle_coeff 12  ba    0.0  0.0  1.430  0.945
+
+# ────────────────────────────────────────────────────────────
+# FRAMEWORK DIHEDRAL COEFFICIENTS (same as _empty.ff)
+# ────────────────────────────────────────────────────────────
+dihedral_coeff  1   0.0306 0.0  -0.0105 0.0   0.0804 0.0
+dihedral_coeff  1  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  1  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.6104
+dihedral_coeff  1  at     0.0  0.0  0.0  0.0  0.0  0.0  112.0200  150.0
+dihedral_coeff  1  aat   -4.5150  112.0200  150.0
+dihedral_coeff  1  bb13   0.0  1.6104  1.6104
+
+dihedral_coeff  2   0.0397 0.0   0.0133 0.0  -0.2453 0.0
+dihedral_coeff  2  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  2  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6157  1.6104
+dihedral_coeff  2  at     0.0  0.0  0.0  0.0  0.0  0.0  112.4279  150.0
+dihedral_coeff  2  aat    0.0  112.4279  150.0
+dihedral_coeff  2  bb13   0.0  1.6157  1.6104
+
+dihedral_coeff  3   2.1989 0.0   0.7528 0.0  -0.4936 0.0
+dihedral_coeff  3  mbt    0.0  0.0  0.0  1.6157
+dihedral_coeff  3  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.7193
+dihedral_coeff  3  at     0.0  0.0  0.0  0.0  0.0  0.0  112.4279  162.4000
+dihedral_coeff  3  aat    0.0  112.4279  162.4000
+dihedral_coeff  3  bb13   0.0  1.6104  1.7193
+
+dihedral_coeff  4   0.5350 0.0  -0.4717 0.0  -0.0036 0.0
+dihedral_coeff  4  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  4  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6581  1.6104
+dihedral_coeff  4  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  150.0
+dihedral_coeff  4  aat    0.0  107.6066  150.0
+dihedral_coeff  4  bb13   0.0  1.6581  1.6104
+
+dihedral_coeff  5   0.1641 0.0   1.7914 0.0   0.1970 0.0
+dihedral_coeff  5  mbt    0.0  0.0  0.0  1.6581
+dihedral_coeff  5  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.9698
+dihedral_coeff  5  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  136.6645
+dihedral_coeff  5  aat    0.0  107.6066  136.6645
+dihedral_coeff  5  bb13   0.0  1.6104  1.9698
+
+dihedral_coeff  6   3.7091 0.0  -0.6560 0.0   0.0856 0.0
+dihedral_coeff  6  mbt    0.0  0.0  0.0  1.6581
+dihedral_coeff  6  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  0.9540
+dihedral_coeff  6  at     0.0  0.0  0.0  0.0  0.0  0.0  107.6066  119.2823
+dihedral_coeff  6  aat    0.0  107.6066  119.2823
+dihedral_coeff  6  bb13   0.0  1.6104  0.9540
+
+dihedral_coeff  7   6.0838 0.0  -0.5702 0.0  -1.4818 0.0
+dihedral_coeff  7  mbt    0.0  0.0  0.0  1.7193
+dihedral_coeff  7  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  1.6157
+dihedral_coeff  7  at     0.0  0.0  0.0  0.0  0.0  0.0  113.4000  162.4000
+dihedral_coeff  7  aat    0.0  113.4000  162.4000
+dihedral_coeff  7  bb13   0.0  1.7193  1.6157
+
+dihedral_coeff  8  -4.1073 0.0   3.5859 0.0   0.2635 0.0
+dihedral_coeff  8  mbt    0.0  0.0  0.0  1.9698
+dihedral_coeff  8  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  1.6581
+dihedral_coeff  8  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  136.6645
+dihedral_coeff  8  aat    0.0  81.4988  136.6645
+dihedral_coeff  8  bb13   0.0  1.7193  1.6581
+
+dihedral_coeff  9  -3.6990 0.0  -3.0937 0.0   0.8520 0.0
+dihedral_coeff  9  mbt    0.0  0.0  0.0  1.9698
+dihedral_coeff  9  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.7193  0.9540
+dihedral_coeff  9  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  107.1200
+dihedral_coeff  9  aat    0.0  81.4988  107.1200
+dihedral_coeff  9  bb13   0.0  1.7193  0.9540
+
+dihedral_coeff 10   2.1752 0.0  -0.9201 0.0   1.1534 0.0
+dihedral_coeff 10  mbt    0.0  0.0  0.0  1.7193
+dihedral_coeff 10  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.9698  1.6157
+dihedral_coeff 10  at     0.0  0.0  0.0  0.0  0.0  0.0  81.4988  162.4000
+dihedral_coeff 10  aat    0.0  81.4988  162.4000
+dihedral_coeff 10  bb13   0.0  1.9698  1.6157
+
+# ETHANOL DIHEDRAL (OPLS form → class2 V1/V2/V3 with no cross terms)
+# CH3-CH2-O_eth-H_eth
+dihedral_coeff 11   0.8340 0.0  -0.1160 0.0   0.7470 0.0
+dihedral_coeff 11  mbt    0.0  0.0  0.0  1.430
+dihedral_coeff 11  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.540  0.945
+dihedral_coeff 11  at     0.0  0.0  0.0  0.0  0.0  0.0  109.47  108.50
+dihedral_coeff 11  aat    0.0  109.47  108.50
+dihedral_coeff 11  bb13   0.0  1.540  0.945
+
+# ────────────────────────────────────────────────────────────
+# IMPROPER COEFFICIENT
+# ────────────────────────────────────────────────────────────
+improper_coeff  1   0.8407  0.0                            # Si_b-Ob-Hb-Al
+improper_coeff  1  aa  0.0  0.0  0.0  0.0  0.0  0.0
+
+# ────────────────────────────────────────────────────────────
+# SPECIAL BONDS & NEIGHBORS
+# ────────────────────────────────────────────────────────────
+special_bonds   lj 0.0 0.0 1.0 coul 0.0 0.0 1.0 angle yes dihedral yes
+neighbor        2.0 bin
+neigh_modify    every 5 delay 0 check yes one 5000 page 150000

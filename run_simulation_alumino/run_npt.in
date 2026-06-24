@@ -1,0 +1,149 @@
+# ============================================================
+# H-ZSM-5 + ethanol — NPT-MD (handles 0 adsorbate molecules)
+# Atom types: 1=Al 2=Hb 3=Oss 4=Oas 5=Ob 6=Si 7=Si_a 8=Si_b
+#             9=CH3 10=CH2 11=O_eth 12=H_eth
+# Revised version
+# ============================================================
+
+units           real
+boundary        p p p
+atom_style      full
+
+bond_style      class2
+angle_style     class2
+dihedral_style  class2
+improper_style  class2
+
+read_data       loaded.lmp
+include         hillsauer_alumsil_loaded.ff
+
+group           framework type 1 2 3 4 5 6 7 8
+group           adsorbate type 9 10 11 12
+
+variable        T equal 373.0
+variable        nads equal count(adsorbate)
+
+# ============================================================
+# PHASE 0: Soft-potential overlap removal (skip if no adsorbate)
+# ============================================================
+if "${nads} == 0" then "jump SELF skip_phase0"
+
+kspace_style    none
+pair_style      soft 2.0
+pair_coeff      * * 10.0
+
+fix freeze0 framework setforce 0.0 0.0 0.0
+velocity framework set 0.0 0.0 0.0
+
+variable        prefactor equal ramp(10,1000)
+fix             softpush all adapt 1 pair soft a * * v_prefactor
+
+thermo          500
+thermo_style    custom step pe press
+run_style       verlet
+timestep        1.0
+
+min_style       sd
+min_modify      dmax 0.1
+minimize        1e-4 1e-6 2000 20000
+min_style       cg
+minimize        1e-4 1e-6 2000 20000
+
+unfix           softpush
+unfix           freeze0
+
+# Restore real potential
+include         hillsauer_alumsil_loaded.ff
+
+label           skip_phase0
+
+# ============================================================
+# PHASE 1: Minimize with real potential (framework frozen)
+# ============================================================
+run_style       verlet
+timestep        1.0
+
+thermo          1000
+thermo_style    custom step press temp etotal enthalpy vol &
+                cella cellb cellc cellalpha cellbeta cellgamma
+
+fix freeze1 framework setforce 0.0 0.0 0.0
+velocity framework set 0.0 0.0 0.0
+min_style       cg
+min_modify      dmax 0.02
+minimize        1e-6 1e-8 5000 50000
+unfix freeze1
+
+# ============================================================
+# PHASE 2: NVT equilibration
+# ============================================================
+reset_timestep  0
+timestep        1.0
+
+if "${nads} == 0" then "jump SELF skip_ads_nvt"
+
+# Stage 1: adsorbate only, 10 -> 50 K
+fix freeze2 framework setforce 0.0 0.0 0.0
+velocity adsorbate create 10.0 12345 dist gaussian mom yes rot yes
+fix eq1 adsorbate nvt temp 10.0 50.0 100.0
+run 4000
+unfix eq1
+
+# Stage 2: adsorbate only, 50 -> T
+fix eq2 adsorbate nvt temp 50.0 ${T} 100.0
+run 2000
+unfix eq2
+unfix freeze2
+
+label           skip_ads_nvt
+
+# Stage 3: full system NVT at T, but KEEP existing velocities
+fix hold framework spring/self 10.0
+fix eq3 all nvt temp ${T} ${T} 100.0
+run 1200
+unfix eq3
+unfix hold
+
+# ============================================================
+# PHASE 3: NPT equilibration
+# ============================================================
+reset_timestep  0
+change_box      all triclinic
+
+fix npt_eq all npt temp ${T} ${T} 100.0 &
+    aniso 1.0 1.0 5000.0
+run 4000
+unfix npt_eq
+
+# ============================================================
+# PHASE 4: NPT production
+# ============================================================
+reset_timestep  0
+timestep        1.0
+
+fix prod all npt temp ${T} ${T} 100.0 &
+    aniso 1.0 1.0 5000.0
+
+# Cell parameter tracking
+variable va equal cella
+variable vb equal cellb
+variable vc equal cellc
+variable vV equal vol
+variable valpha equal cellalpha
+variable vbeta  equal cellbeta
+variable vgamma equal cellgamma
+fix cell_track all print 1000 "${va} ${vb} ${vc} ${valpha} ${vbeta} ${vgamma} ${vV}" &
+    file cell_params.dat screen no title "a b c alpha beta gamma volume"
+
+thermo          1000
+thermo_style    custom step press temp etotal enthalpy vol &
+                cella cellb cellc cellalpha cellbeta cellgamma
+
+dump d1 all custom 10000 traj.lammpstrj id type xu yu zu ix iy iz
+dump_modify d1 sort id
+
+# 2 000 000 steps x 0.25 fs = 2500 ps = 2.5 ns
+run 10000
+
+write_data loaded_npt_final.lmp
+print "=== NPT complete (nads=${nads}) ==="

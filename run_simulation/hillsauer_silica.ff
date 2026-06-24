@@ -1,0 +1,137 @@
+# ============================================================
+# hillsauer_silica_loaded.ff
+# Hill-Sauer (framework) + TraPPE-UA (ethanol) for all-silica MFI
+#
+# Usage:  include hillsauer_silica_loaded.ff
+#
+# Atom types: 1=Si  2=O  3=CH3_eth  4=CH2_eth  5=O_eth  6=H_eth
+#
+# Framework:  Hill-Sauer 1994, mHSFF (Boulfelfel 2016, θ_TOT=150°)
+# Ethanol:    TraPPE-UA (Siepmann et al.)
+# Cross:      Bai et al. 2013 LJ + Lorentz-Berthelot
+# Charges:    H-S bond increments (fw) + TraPPE (eth)
+#
+# Bond types:     1=Si-O  2=CH3-CH2  3=CH2-O_eth  4=O_eth-H_eth
+# Angle types:    1=Si-O-Si  2=O-Si-O  3=CH3-CH2-O  4=CH2-O-H
+# Dihedral types: 1=O-Si-O-Si  2=CH3-CH2-O-H
+# Improper types: 1=O-Si-O-O
+# ============================================================
+
+# ────────────────────────────────────────────────────────────
+# MASSES
+# ────────────────────────────────────────────────────────────
+mass  1  28.0855    # Si
+mass  2  15.9994    # O
+mass  3  15.035     # CH3 (TraPPE-UA)
+mass  4  14.027     # CH2 (TraPPE-UA)
+mass  5  15.9994    # O_eth
+mass  6   1.008     # H_eth
+
+# ────────────────────────────────────────────────────────────
+# CHARGES
+# ────────────────────────────────────────────────────────────
+set type  1 charge  0.5236    # Si  = 4×δ(Si-O) = 4×0.1309
+set type  2 charge -0.2618    # O   = 2×δ(O-Si) = -2×0.1309
+set type  3 charge  0.000     # CH3
+set type  4 charge  0.265     # CH2
+set type  5 charge -0.700     # O_eth
+set type  6 charge  0.435     # H_eth
+
+# ────────────────────────────────────────────────────────────
+# PAIR STYLE — table (fw-fw) + LJ (fw-eth, eth-eth) + Coulomb
+# ────────────────────────────────────────────────────────────
+pair_style      hybrid/overlay table spline 2000 lj/cut 12.0 coul/long 12.0
+pair_modify     tail no shift no
+kspace_style    ewald 1.0E-06
+
+pair_coeff      * * coul/long
+
+# fw-fw: tabulated A/r^9
+pair_coeff  1 1  table hillsauer_silica.table Si_Si
+pair_coeff  1 2  table hillsauer_silica.table Si_O
+pair_coeff  2 2  table hillsauer_silica.table O_O
+
+# fw-ads (Bai × TraPPE, Lorentz-Berthelot)
+pair_coeff  1 3  lj/cut  0.09227  3.025   # Si-CH3
+pair_coeff  1 4  lj/cut  0.06321  3.125   # Si-CH2
+pair_coeff  1 5  lj/cut  0.08988  2.660   # Si-O_eth
+pair_coeff  1 6  lj/cut  0.0      1.000   # Si-H_eth
+pair_coeff  2 3  lj/cut  0.14320  3.525   # O-CH3
+pair_coeff  2 4  lj/cut  0.09811  3.625   # O-CH2
+pair_coeff  2 5  lj/cut  0.13949  3.160   # O-O_eth
+pair_coeff  2 6  lj/cut  0.0      1.000   # O-H_eth
+
+# ads-ads (TraPPE)
+pair_coeff  3 3  lj/cut  0.19475  3.750   # CH3-CH3
+pair_coeff  3 4  lj/cut  0.13341  3.850   # CH3-CH2
+pair_coeff  3 5  lj/cut  0.18975  3.385   # CH3-O_eth
+pair_coeff  3 6  lj/cut  0.0      1.000   # CH3-H_eth
+pair_coeff  4 4  lj/cut  0.09141  3.950   # CH2-CH2
+pair_coeff  4 5  lj/cut  0.12994  3.485   # CH2-O_eth
+pair_coeff  4 6  lj/cut  0.0      1.000   # CH2-H_eth
+pair_coeff  5 5  lj/cut  0.18481  3.020   # O_eth-O_eth
+pair_coeff  5 6  lj/cut  0.0      1.000   # O_eth-H_eth
+pair_coeff  6 6  lj/cut  0.0      1.000   # H_eth-H_eth
+
+# ────────────────────────────────────────────────────────────
+# BOND COEFFICIENTS — class2 quartic
+# ────────────────────────────────────────────────────────────
+bond_coeff  1  1.6104  459.0786  -672.4445  443.3651   # Si-O
+bond_coeff  2  1.540   553.94  0.0  0.0                # CH3-CH2
+bond_coeff  3  1.430   553.94  0.0  0.0                # CH2-O_eth
+bond_coeff  4  0.945   553.94  0.0  0.0                # O_eth-H_eth
+
+# ────────────────────────────────────────────────────────────
+# ANGLE COEFFICIENTS — class2 quartic + cross terms
+# ────────────────────────────────────────────────────────────
+# --- 1: Si-O-Si (T-O-T, mHSFF) θ₀=150° ---
+angle_coeff  1  150.0  20.7015  27.5506  10.9930
+angle_coeff  1  bb   151.8742  1.6104  1.6104
+angle_coeff  1  ba     9.2390   9.2390  1.6104  1.6104
+
+# --- 2: O-Si-O (O-T-O) θ₀=113° ---
+angle_coeff  2  113.0  81.9691  -36.5814  116.9558
+angle_coeff  2  bb    0.0  1.6104  1.6104
+angle_coeff  2  ba   78.1239  78.1239  1.6104  1.6104
+
+# --- 3: CH3-CH2-O_eth θ₀=109.47° ---
+angle_coeff  3  109.47  100.16  0.0  0.0
+angle_coeff  3  bb    0.0  1.540  1.430
+angle_coeff  3  ba    0.0  0.0  1.540  1.430
+
+# --- 4: CH2-O_eth-H_eth θ₀=108.50° ---
+angle_coeff  4  108.50  110.09  0.0  0.0
+angle_coeff  4  bb    0.0  1.430  0.945
+angle_coeff  4  ba    0.0  0.0  1.430  0.945
+
+# ────────────────────────────────────────────────────────────
+# DIHEDRAL COEFFICIENTS — class2
+# ────────────────────────────────────────────────────────────
+# --- 1: O-Si-O-Si (framework) ---
+dihedral_coeff  1  0.0306 0.0  -0.0105 0.0  0.0804 0.0
+dihedral_coeff  1  mbt    0.0  0.0  0.0  1.6104
+dihedral_coeff  1  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.6104  1.6104
+dihedral_coeff  1  at     0.0  0.0  0.0  0.0  0.0  0.0  113.0  150.0
+dihedral_coeff  1  aat   -4.5150  113.0  150.0
+dihedral_coeff  1  bb13   0.0  1.6104  1.6104
+
+# --- 2: CH3-CH2-O_eth-H_eth (ethanol, OPLS) ---
+dihedral_coeff  2  0.4169 0.0  0.0580 0.0  0.3734 0.0
+dihedral_coeff  2  mbt    0.0  0.0  0.0  1.430
+dihedral_coeff  2  ebt    0.0  0.0  0.0  0.0  0.0  0.0  1.540  0.945
+dihedral_coeff  2  at     0.0  0.0  0.0  0.0  0.0  0.0  109.47  108.50
+dihedral_coeff  2  aat    0.0  109.47  108.50
+dihedral_coeff  2  bb13   0.0  1.540  0.945
+
+# ────────────────────────────────────────────────────────────
+# IMPROPER COEFFICIENT
+# ────────────────────────────────────────────────────────────
+improper_coeff  1  0.0  0.0                                # O-Si-O-O
+improper_coeff  1  aa  -6.3030  0.0  0.0  112.0  0.0  112.0
+
+# ────────────────────────────────────────────────────────────
+# SPECIAL BONDS & NEIGHBORS
+# ────────────────────────────────────────────────────────────
+special_bonds   lj 0.0 0.0 1.0 coul 0.0 0.0 1.0 angle yes dihedral yes
+neighbor        2.0 bin
+neigh_modify    every 5 delay 0 check yes one 5000 page 150000

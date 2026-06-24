@@ -1,1 +1,14 @@
 /Manifest*.toml
+
+
+# Simulation results
+run_simulation/results/
+run_simulation_alumino/results/
+
+# RASPA restart files
+**/restart_data.bin
+
+# Common generated simulation files
+**/cycle_*/raspa/output/
+**/cycle_*/lammps/log.lammps
+**/cycle_*/lammps/*.lammpstrj

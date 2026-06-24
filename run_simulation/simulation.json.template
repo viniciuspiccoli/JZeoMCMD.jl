@@ -1,0 +1,47 @@
+{
+  "SimulationType" : "MonteCarlo",
+  "NumberOfCycles" : 5000,
+  "NumberOfInitializationCycles" : 2000,
+  "NumberOfEquilibrationCycles" : 2000,
+  "PrintEvery" : 500,
+  "Systems" : 
+  [
+    {
+      "Type" : "Framework",
+      "Name" : "__FRAMEWORK__",
+      "HeliumVoidFraction"  : 0.29, 
+      "NumberOfUnitCells" : [2, 2, 2],
+      "ExternalTemperature" : __TEMPERATURE__,
+      "ExternalPressure" : __PRESSURE__,
+      "ChargeMethod" : "Ewald",
+      "OutputPDBMovie" : true,
+      "SampleMovieEvery" : 5000,
+      "ComputeConventionalRDF" : true,
+      "NumberOfBinsConventionalRDF" : 128,
+      "RangeConventionalRDF" : 12.0,
+      "WriteConventionalRDFEvery" : 5000,
+      "WriteLammpsData" : true,
+      "ComputeDensityGrid": true,
+      "SampleDensityGridEvery": 100,
+      "WriteDensityGridEvery": 5000,
+      "DensityGridBinning" : "Equitable",
+      "DensityGridSize": [128, 128, 128],
+      "DensityGridPseudoAtomsList": ["CH3_eth", "CH2_eth", "O_eth", "H_eth"]
+    }
+  ],
+
+  "Components" : 
+  [ 
+    {
+      "Name" : "ethanol",
+      "MoleculeDefinition" : "Local",
+      "FugacityCoefficient" : 1.0,
+      "TranslationProbability" : 0.5,
+      "RotationProbability" : 0.5,
+      "ReinsertionProbability" : 0.5,
+      "PartialReinsertionProbability" : 0.5,
+      "SwapProbability" : 1.0,
+      "CreateNumberOfMolecules" : 0
+    }
+  ]
+}

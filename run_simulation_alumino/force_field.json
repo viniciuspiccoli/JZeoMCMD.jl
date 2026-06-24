@@ -1,0 +1,246 @@
+{
+  "PseudoAtoms" :
+  [
+    {
+      "name" : "Si",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "Si",
+      "print_as" : "Si",
+      "mass" : 28.0855,
+      "charge" : 0.5236,
+      "source" : "H-S 1994: Si bonded to 4 Oss, q = 4 × δ(Si-Oss) = 4 × 0.1309"
+    },
+    {
+      "name" : "Si_a",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "Si",
+      "print_as" : "Si",
+      "mass" : 28.0855,
+      "charge" : 0.5192,
+      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Oas, q = 3(0.1309) + 0.1265"
+    },
+    {
+      "name" : "Si_b",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "Si",
+      "print_as" : "Si",
+      "mass" : 28.0855,
+      "charge" : 0.5319,
+      "source" : "H-S 1995: Si bonded to 3 Oss + 1 Ob, q = 3(0.1309) + 0.1392"
+    },
+    {
+      "name" : "Al",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "Al",
+      "print_as" : "Al",
+      "mass" : 26.98154,
+      "charge" : 0.5366,
+      "source" : "H-S 1995: Al bonded to 3 Oas + 1 Ob, q = 3(0.1694) + 0.0284"
+    },
+    {
+      "name" : "Oss",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.9994,
+      "charge" : -0.2618,
+      "source" : "H-S 1994: O bridging Si-O-Si, q = -2 × 0.1309"
+    },
+    {
+      "name" : "Oas",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.9994,
+      "charge" : -0.2959,
+      "source" : "H-S 1995 Table 8: O bridging Si-O-Al (no H), q = -(0.1265 + 0.1694)"
+    },
+    {
+      "name" : "Ob",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.9994,
+      "charge" : -0.2515,
+      "source" : "H-S 1995 Table 8: O in Si-O(H)-Al, q = -(0.1392 + 0.0284 + 0.0839)"
+    },
+    {
+      "name" : "O",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.9994,
+      "charge" : -0.2618,
+      "source" : "Alias for Oss — used when CIF has generic O labels (pure silica)"
+    },
+    {
+      "name" : "Hb",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "H",
+      "print_as" : "H",
+      "mass" : 1.008,
+      "charge" : 0.0839,
+      "source" : "H-S 1995 Table 8: Brønsted proton, q = +δ(Hb-Ob) = +0.0839"
+    },
+
+    {
+      "name" : "H_BAS",
+      "framework" : true,
+      "print_to_output" : true,
+      "element" : "H",
+      "print_as" : "H",
+      "mass" : 1.008,
+      "charge" : 0.0839,
+      "source" : "Alias for Hb — used when CIF labels Brønsted H as H_BAS1, H_BAS2... // solely due to my script to create Si/Al structures... the change here is easier."
+    },
+    {
+      "name" : "CH3_eth",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "C",
+      "print_as" : "C",
+      "mass" : 15.035,
+      "charge" : 0.0,
+      "source" : "TraPPE-UA ethanol"
+    },
+    {
+      "name" : "CH2_eth",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "C",
+      "print_as" : "C",
+      "mass" : 14.027,
+      "charge" : 0.265,
+      "source" : "TraPPE-UA ethanol"
+    },
+    {
+      "name" : "O_eth",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "O",
+      "print_as" : "O",
+      "mass" : 15.999,
+      "charge" : -0.700,
+      "source" : "TraPPE-UA ethanol"
+    },
+    {
+      "name" : "H_eth",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "H",
+      "print_as" : "H",
+      "mass" : 1.008,
+      "charge" : 0.435,
+      "source" : "TraPPE-UA ethanol"
+    },
+    {
+      "name" : "He",
+      "framework" : false,
+      "print_to_output" : true,
+      "element" : "He",
+      "print_as" : "He",
+      "mass" : 4.002602,
+      "charge" : 0.0,
+      "source" : "Hirschfelder 1954 (helium void fraction)"
+    }
+  ],
+  "SelfInteractions" :
+  [
+    {
+      "name" : "Si",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Bai 2013 (fw-adsorbate vdW)"
+    },
+    {
+      "name" : "Si_a",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Same LJ as Si — only charge differs"
+    },
+    {
+      "name" : "Si_b",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Same LJ as Si — only charge differs"
+    },
+    {
+      "name" : "Al",
+      "type" : "lennard-jones",
+      "parameters" : [22.0, 2.30],
+      "source" : "Approximated as Si (Bai has no explicit Al LJ)"
+    },
+    {
+      "name" : "O",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Alias for Oss"
+    },
+    {
+      "name" : "Oss",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Bai 2013"
+    },
+    {
+      "name" : "Oas",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Same LJ as Oss — all framework O same vdW"
+    },
+    {
+      "name" : "Ob",
+      "type" : "lennard-jones",
+      "parameters" : [53.0, 3.30],
+      "source" : "Same LJ as Oss"
+    },
+    {
+      "name" : "Hb",
+      "type" : "lennard-jones",
+      "parameters" : [0.0, 0.0],
+      "source" : "No LJ on Brønsted proton (Coulomb only)"
+    },
+    {
+      "name" : "H_BAS",
+      "type" : "lennard-jones",
+      "parameters" : [0.0, 0.0],
+      "source" : "Alias for Hb — matches H_BAS label prefix in CIF"
+    },
+    {
+      "name" : "CH3_eth",
+      "type" : "lennard-jones",
+      "parameters" : [98.0, 3.75],
+      "source" : "TraPPE-UA"
+    },
+    {
+      "name" : "CH2_eth",
+      "type" : "lennard-jones",
+      "parameters" : [46.0, 3.95],
+      "source" : "TraPPE-UA"
+    },
+    {
+      "name" : "O_eth",
+      "type" : "lennard-jones",
+      "parameters" : [93.0, 3.02],
+      "source" : "TraPPE-UA"
+    },
+    {
+      "name" : "H_eth",
+      "type" : "lennard-jones",
+      "parameters" : [0.0, 0.0],
+      "source" : "TraPPE-UA"
+    }
+  ],
+  "MixingRule" : "Lorentz-Berthelot",
+  "TruncationMethod" : "shifted",
+  "TailCorrections" : false
+}
