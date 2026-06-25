@@ -8,6 +8,10 @@ using JSON
 include("helpers.jl")
 include("test_lammps_io.jl")
 include("test_analysis.jl")
+include("test_statistics_types.jl")
+include("test_cell_parameter_series.jl")
+include("test_observable_summaries.jl")
+include("test_cycle_statistics_reporting.jl")
 include("test_cif.jl")
 include("test_external_inputs.jl")
 

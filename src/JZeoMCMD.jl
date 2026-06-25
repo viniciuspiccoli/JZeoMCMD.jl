@@ -58,6 +58,34 @@ module JZeoMCMD
 	export parse_lammps_log, extract_cell_params, compute_strain
 	export parse_raspa3_output, analyze_channel_occupancy, write_cycle_summary
 
+	# typed containers for per-observable, per-cycle, and convergence statistics
+	# calculations and workflow integration are introduced in later steps
+	include("statistics_types.jl")
+	export BlockAveragingStatistics, DriftStatistics, ObservableStatistics
+	export CycleStatistics, ConvergenceDecision
+	export statistical_uncertainty, sampling_valid, has_block_analysis
+	export has_drift_analysis, get_observable, all_observables
+	export cycle_statistics_valid, failed_observables
+
+	# robust parser for complete cell_params.dat production time series
+	include("cell_parameter_series.jl")
+	export CellParameterParseError, CellParameterSeries
+	export read_cell_parameter_series, cell_parameter_names
+	export has_cell_parameter, cell_parameter_column
+
+	# simple production summaries: mean, raw standard deviation, and naive SEM
+	include("observable_summaries.jl")
+	export default_observable_unit, summarize_observable
+	export summarize_cell_parameter_series, summarize_md_cycle
+
+	# per-cycle CSV/JSON reporting and workflow integration for MD summaries
+	include("cycle_statistics_reporting.jl")
+	export CycleStatisticsReport, CycleStatisticsReportError
+	export observable_statistics_dictionary, cycle_statistics_dictionary
+	export write_cycle_statistics_csv, write_cycle_statistics_json
+	export write_cycle_statistics_report, print_md_cycle_statistics
+	export analyze_md_cycle_statistics
+
 	# reload adsorbate: strip old ethanol from NPT data, insert new from RASPA3 JSON
 	# uses write_complete_data from build_loaded_zeolite.jl
 	include("reload_adsorbate.jl")

@@ -1,0 +1,145 @@
+@testset "Per-cycle MD statistics reports" begin
+    mktempdir() do root
+        lammps_dir = joinpath(root, "cycle_02", "lammps")
+        mkpath(lammps_dir)
+        source = joinpath(lammps_dir, "cell_params.dat")
+        write(
+            source,
+            """
+            # Step Cella Cellb Cellc CellAlpha CellBeta CellGamma Volume Temp Press
+            0   40.0 41.0 27.0 90.0 90.0 90.0 44280.0 372.8 1.2
+            100 40.1 41.1 27.1 89.9 90.1 90.0 44655.4 373.2 0.8
+            200 40.2 41.2 27.2 89.8 90.2 90.0 45034.0 373.0 1.1
+            """,
+        )
+
+        io = IOBuffer()
+        report_ref = Ref{CycleStatisticsReport}()
+        redirect_stdout(io) do
+            report_ref[] = analyze_md_cycle_statistics(
+                2,
+                lammps_dir;
+                units=Dict(:pressure => "atm"),
+            )
+        end
+        report = report_ref[]
+
+        @test report.statistics.cycle == 2
+        @test !report.statistics.valid
+        @test report.directory ==
+              joinpath(root, "cycle_02", "statistics")
+        @test report.source_path == source
+        @test isfile(report.csv_path)
+        @test isfile(report.json_path)
+
+        volume = report.statistics.md[:volume]
+        @test volume.status == :summary_only
+        @test volume.n_samples == 3
+        @test isapprox(volume.mean, mean([44280.0, 44655.4, 45034.0]))
+        @test report.statistics.md[:pressure].unit == "atm"
+
+        document = JSON.parsefile(report.json_path)
+        @test document["schema_version"] == 1
+        @test document["cycle"] == 2
+        @test document["valid"] == false
+        @test document["source_path"] == source
+        @test document["md"]["volume"]["n_samples"] == 3
+        @test document["md"]["volume"]["status"] == "summary_only"
+        @test document["md"]["volume"]["block"] === nothing
+
+        csv_lines = readlines(report.csv_path)
+        @test length(csv_lines) == 10
+        @test startswith(csv_lines[1], "cycle,stage,observable")
+        @test any(
+            line -> occursin("2,md,volume", line),
+            csv_lines[2:end],
+        )
+
+        output = String(take!(io))
+        @test occursin("MD production summary", output)
+        @test occursin("naive SEM", output)
+        @test occursin("volume", output)
+    end
+end
+
+@testset "Missing MD time series is nonfatal by default" begin
+    mktempdir() do root
+        lammps_dir = joinpath(root, "cycle_01", "lammps")
+        mkpath(lammps_dir)
+
+        report = analyze_md_cycle_statistics(
+            1,
+            lammps_dir;
+            print_summary=false,
+        )
+        @test isempty(report.statistics.md)
+        @test !report.statistics.valid
+        @test length(report.statistics.warnings) == 1
+        @test occursin(
+            "not found",
+            report.statistics.warnings[1],
+        )
+        @test isfile(report.csv_path)
+        @test length(readlines(report.csv_path)) == 1
+
+        document = JSON.parsefile(report.json_path)
+        @test isempty(document["md"])
+        @test length(document["warnings"]) == 1
+
+        @test_throws CycleStatisticsReportError analyze_md_cycle_statistics(
+            1,
+            lammps_dir;
+            strict=true,
+            print_summary=false,
+        )
+    end
+end
+
+@testset "Cycle statistics serialization helpers" begin
+    observation = ObservableStatistics(
+        name=:volume,
+        stage=:md,
+        unit="A^3",
+        n_samples=4,
+        mean=10.0,
+        standard_deviation=2.0,
+        naive_sem=1.0,
+        status=:summary_only,
+        warnings=["example, warning"],
+    )
+    statistics = CycleStatistics(
+        cycle=4,
+        md=Dict(:volume => observation),
+        warnings=["summary only"],
+    )
+
+    dictionary = cycle_statistics_dictionary(
+        statistics;
+        source_path="cell_params.dat",
+    )
+    @test dictionary["cycle"] == 4
+    @test dictionary["md"]["volume"]["mean"] == 10.0
+    @test dictionary["md"]["volume"]["block"] === nothing
+
+    observable_dictionary =
+        observable_statistics_dictionary(observation)
+    @test observable_dictionary["stage"] == "md"
+    @test observable_dictionary["warnings"] == ["example, warning"]
+
+    mktempdir() do root
+        report = write_cycle_statistics_report(
+            statistics,
+            root;
+            source_path="cell_params.dat",
+        )
+        csv_text = read(report.csv_path, String)
+        @test occursin("\"example, warning\"", csv_text)
+
+        @test_throws CycleStatisticsReportError write_cycle_statistics_report(
+            statistics,
+            root;
+            source_path="cell_params.dat",
+            overwrite=false,
+        )
+    end
+end

@@ -1,0 +1,11 @@
+--- test/test_cell_parameter_series.jl
++++ test/test_cell_parameter_series.jl
+@@ -14,7 +14,7 @@
+         @test size(series) == (2, 10)
+         @test length(series) == 2
+         @test series.header_source == :comment
+-        @test series.line_numbers == [4, 5]
++        @test series.line_numbers == [3, 4]
+ 
+         @test series[:step] == [0.0, 100.0]
+         @test series[:a] == [40.0, 40.1]

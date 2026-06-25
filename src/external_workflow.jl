@@ -481,6 +481,7 @@ function _run_external_npt!(
     wp::WorkflowParams,
     prepared::PreparedExternalWorkflowCycle,
     data_file::AbstractString;
+    cycle::Integer,
     lammps_data_filename::AbstractString="loaded.lmp",
     lammps_output_files=DEFAULT_EXTERNAL_LAMMPS_OUTPUT_FILES,
 )
@@ -527,7 +528,16 @@ function _run_external_npt!(
     @printf("  [NPT] a=%.4f b=%.4f c=%.4f V=%.1f\n",
             cell.a, cell.b, cell.c, cell.volume)
 
-    return (data=output_data, cell=cell, log=log_data, dir=ldir)
+    statistics_report = analyze_md_cycle_statistics(cycle, ldir)
+
+    return (
+        data=output_data,
+        cell=cell,
+        log=log_data,
+        dir=ldir,
+        statistics=statistics_report.statistics,
+        statistics_report=statistics_report,
+    )
 end
 
 """
@@ -662,6 +672,7 @@ function run_gcmc_md_workflow(
             run_params,
             prepared,
             data_file;
+            cycle=cycle,
             lammps_data_filename=lammps_data_filename,
             lammps_output_files=lammps_output_files,
         )
@@ -677,6 +688,9 @@ function run_gcmc_md_workflow(
         println("\n  ── Step 5: Analysis ──")
         summary = step_analyze!(run_params, cycle, npt.cell, gcmc.output,
                                 ref_cell, npt.data)
+        summary["md_statistics_csv"] = npt.statistics_report.csv_path
+        summary["md_statistics_json"] = npt.statistics_report.json_path
+        summary["md_statistics_valid"] = npt.statistics.valid
         push!(history, summary)
 
         current_cif = new_cif
